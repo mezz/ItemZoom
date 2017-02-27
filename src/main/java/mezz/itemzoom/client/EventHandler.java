@@ -9,7 +9,6 @@ import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.client.event.RenderTooltipEvent;
 import net.minecraftforge.fml.common.eventhandler.EventPriority;
@@ -17,7 +16,6 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import org.lwjgl.input.Keyboard;
-import org.lwjgl.input.Mouse;
 
 @SideOnly(Side.CLIENT)
 public class EventHandler {
@@ -27,6 +25,12 @@ public class EventHandler {
 			int eventKey = Keyboard.getEventKey();
 			if (KeyBindings.TOGGLE.isActiveAndMatches(eventKey)) {
 				Config.toggleEnabled();
+				event.setCanceled(true);
+			} else if (KeyBindings.ZOOM_IN.isActiveAndMatches(eventKey)) {
+				Config.increaseZoom();
+				event.setCanceled(true);
+			} else if (KeyBindings.ZOOM_OUT.isActiveAndMatches(eventKey)) {
+				Config.decreaseZoom();
 				event.setCanceled(true);
 			}
 		}
@@ -59,7 +63,7 @@ public class EventHandler {
 
 	private static void renderZoomedStack(ItemStack itemStack, GuiContainer guiContainer, Minecraft minecraft) {
 		ScaledResolution scaledResolution = new ScaledResolution(minecraft);
-		final float scale = guiContainer.getGuiLeft() / 17f; // item is 16 wide, give it some extra space on each side
+		final float scale = Config.getZoomAmount() * guiContainer.getGuiLeft() / 17f; // item is 16 wide, give it some extra space on each side
 		final float xPosition = (guiContainer.getGuiLeft() / scale - 16f) / 2f;
 		final float yPosition = (scaledResolution.getScaledHeight() / scale - 16f) / 2f;
 		FontRenderer font = getFontRenderer(minecraft, itemStack);
