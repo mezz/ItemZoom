@@ -1,0 +1,16 @@
+[
+{
+  "modid": "itemzoom",
+  "name": "Item Zoom",
+  "description": "Shows a big version of the item you hover over.",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "url": "",
+  "updateUrl": "",
+  "authorList": ["mezz"],
+  "credits": "",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": []
+}
+]
