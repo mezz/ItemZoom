@@ -14,7 +14,8 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 		modid = ItemZoom.MOD_ID,
 		name = ItemZoom.MOD_NAME,
 		version = ItemZoom.VERSION,
-		clientSideOnly = true
+		clientSideOnly = true,
+		dependencies = "required-after:Forge@[12.18.1.2053,);" // Forge version that RenderTooltipEvent was added
 )
 public class ItemZoom {
 	public static final String MOD_NAME = "Item Zoom";

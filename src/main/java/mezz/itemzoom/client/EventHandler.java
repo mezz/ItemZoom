@@ -25,13 +25,10 @@ public class EventHandler {
 			int eventKey = Keyboard.getEventKey();
 			if (KeyBindings.TOGGLE.isActiveAndMatches(eventKey)) {
 				Config.toggleEnabled();
-				event.setCanceled(true);
 			} else if (KeyBindings.ZOOM_IN.isActiveAndMatches(eventKey)) {
 				Config.increaseZoom();
-				event.setCanceled(true);
 			} else if (KeyBindings.ZOOM_OUT.isActiveAndMatches(eventKey)) {
 				Config.decreaseZoom();
-				event.setCanceled(true);
 			}
 		}
 	}
@@ -40,7 +37,7 @@ public class EventHandler {
 	public void onItemStackTooltip(RenderTooltipEvent.Pre event) {
 		if (Config.isToggledEnabled() || isEnableKeyHeld()) {
 			ItemStack itemStack = event.getStack();
-			if (!itemStack.isEmpty()) {
+			if (itemStack != null) {
 				Minecraft minecraft = Minecraft.getMinecraft();
 				GuiScreen currentScreen = minecraft.currentScreen;
 				if (currentScreen instanceof GuiContainer) {
@@ -63,8 +60,8 @@ public class EventHandler {
 
 	private static void renderZoomedStack(ItemStack itemStack, GuiContainer guiContainer, Minecraft minecraft) {
 		ScaledResolution scaledResolution = new ScaledResolution(minecraft);
-		final float scale = Config.getZoomAmount() * guiContainer.getGuiLeft() / 17f; // item is 16 wide, give it some extra space on each side
-		final float xPosition = (guiContainer.getGuiLeft() / scale - 16f) / 2f;
+		final float scale = Config.getZoomAmount() * guiContainer.guiLeft / 17f; // item is 16 wide, give it some extra space on each side
+		final float xPosition = (guiContainer.guiLeft / scale - 16f) / 2f;
 		final float yPosition = (scaledResolution.getScaledHeight() / scale - 16f) / 2f;
 		FontRenderer font = getFontRenderer(minecraft, itemStack);
 
@@ -84,14 +81,14 @@ public class EventHandler {
 
 		String modName = ItemZoom.MOD_NAME;
 		int stringWidth = font.getStringWidth(modName);
-		int x = (guiContainer.getGuiLeft() - stringWidth) / 2;
+		int x = (guiContainer.guiLeft - stringWidth) / 2;
 		int y = (scaledResolution.getScaledHeight() + Math.round(17 * scale)) / 2;
 		font.drawString(modName, x, y, 4210752);
 
 		if (Config.isToggledEnabled()) {
 			String toggleText = KeyBindings.TOGGLE.getDisplayName();
 			stringWidth = font.getStringWidth(toggleText);
-			x = (guiContainer.getGuiLeft() - stringWidth) / 2;
+			x = (guiContainer.guiLeft - stringWidth) / 2;
 			y += font.FONT_HEIGHT;
 			font.drawString(toggleText, x, y, 4210752);
 		}
