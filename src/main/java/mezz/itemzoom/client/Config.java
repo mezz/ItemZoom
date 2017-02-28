@@ -15,7 +15,7 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 public class Config {
 	@Nullable
 	private static Configuration config;
-	private static String category = "itemzoom";
+	private static final String category = "itemzoom";
 	private static final float MIN_ZOOM = 0.1f;
 	private static final float MAX_ZOOM = 1.0f;
 	private static final float DEFAULT_ZOOM = MAX_ZOOM;

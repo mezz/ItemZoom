@@ -40,7 +40,7 @@ public class EventHandler {
 	public void onItemStackTooltip(RenderTooltipEvent.Pre event) {
 		if (Config.isToggledEnabled() || isEnableKeyHeld()) {
 			ItemStack itemStack = event.getStack();
-			if (!itemStack.isEmpty()) {
+			if (itemStack != null && !itemStack.isEmpty()) {
 				Minecraft minecraft = Minecraft.getMinecraft();
 				GuiScreen currentScreen = minecraft.currentScreen;
 				if (currentScreen instanceof GuiContainer) {
