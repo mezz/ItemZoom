@@ -1,6 +1,7 @@
 package mezz.itemzoom.client;
 
 import mezz.itemzoom.ItemZoom;
+import mezz.itemzoom.client.compat.JeiCompat;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.GuiScreen;
@@ -38,16 +39,22 @@ public class EventHandler {
 
 	@SubscribeEvent(priority = EventPriority.LOW)
 	public void onItemStackTooltip(RenderTooltipEvent.Pre event) {
-		if (Config.isToggledEnabled() || isEnableKeyHeld()) {
-			ItemStack itemStack = event.getStack();
-			if (itemStack != null && !itemStack.isEmpty()) {
-				Minecraft minecraft = Minecraft.getMinecraft();
-				GuiScreen currentScreen = minecraft.currentScreen;
-				if (currentScreen instanceof GuiContainer) {
-					GuiContainer guiContainer = (GuiContainer) currentScreen;
-					renderZoomedStack(itemStack, guiContainer, minecraft);
-				}
-			}
+		if (!Config.isToggledEnabled() && !isEnableKeyHeld()) {
+			return;
+		}
+		ItemStack itemStack = event.getStack();
+		if (itemStack == null || itemStack.isEmpty()) {
+			return;
+		}
+		if (Config.isJeiOnly() && !ItemStack.areItemStacksEqual(itemStack, JeiCompat.getStackUnderMouse())) {
+			return;
+		}
+
+		Minecraft minecraft = Minecraft.getMinecraft();
+		GuiScreen currentScreen = minecraft.currentScreen;
+		if (currentScreen instanceof GuiContainer) {
+			GuiContainer guiContainer = (GuiContainer) currentScreen;
+			renderZoomedStack(itemStack, guiContainer, minecraft);
 		}
 	}
 

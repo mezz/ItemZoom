@@ -7,3 +7,4 @@ key.itemzoom.zoom.out=Zoom Out
 # Config
 config.itemzoom.toggle.enabled=True if Item Zoom has been toggled On
 config.itemzoom.zoom.amount=Zoom Amount
+config.itemzoom.jei.only=Only zoom items from the JEI list

@@ -4,6 +4,7 @@ import javax.annotation.Nullable;
 import java.io.File;
 
 import mezz.itemzoom.ItemZoom;
+import mezz.itemzoom.client.compat.JeiCompat;
 import net.minecraft.client.resources.I18n;
 import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.common.config.Property;
@@ -22,6 +23,7 @@ public class Config {
 
 	private static boolean toggledEnabled = true;
 	private static float zoomAmount = DEFAULT_ZOOM;
+	private static boolean jeiOnly = false;
 
 	public static boolean isToggledEnabled() {
 		return toggledEnabled;
@@ -72,6 +74,10 @@ public class Config {
 		}
 	}
 
+	public static boolean isJeiOnly() {
+		return jeiOnly && JeiCompat.isLoaded();
+	}
+
 	public static void preInit(FMLPreInitializationEvent event) {
 		File configFile = new File(event.getModConfigurationDirectory(), ItemZoom.MOD_ID + ".cfg");
 		config = new Configuration(configFile, "1.0");
@@ -81,6 +87,9 @@ public class Config {
 
 		configComment = I18n.format("config.itemzoom.zoom.amount");
 		zoomAmount = config.getFloat("zoom.amount", category, DEFAULT_ZOOM, MIN_ZOOM, MAX_ZOOM, configComment);
+
+		configComment = I18n.format("config.itemzoom.jei.only");
+		jeiOnly = config.getBoolean("jei.only", category, false, configComment);
 
 		if (config.hasChanged()) {
 			config.save();
