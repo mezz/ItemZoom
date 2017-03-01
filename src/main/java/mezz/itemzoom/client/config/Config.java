@@ -1,4 +1,4 @@
-package mezz.itemzoom.client;
+package mezz.itemzoom.client.config;
 
 import javax.annotation.Nullable;
 import java.io.File;
@@ -17,13 +17,22 @@ public class Config {
 	@Nullable
 	private static Configuration config;
 	private static final String category = "itemzoom";
-	private static final float MIN_ZOOM = 0.1f;
-	private static final float MAX_ZOOM = 1.0f;
-	private static final float DEFAULT_ZOOM = MAX_ZOOM;
+	private static final int MIN_ZOOM = 10;
+	private static final int MAX_ZOOM = 100;
+	private static final int DEFAULT_ZOOM = MAX_ZOOM;
 
 	private static boolean toggledEnabled = true;
-	private static float zoomAmount = DEFAULT_ZOOM;
+	private static int zoomAmount = DEFAULT_ZOOM;
 	private static boolean jeiOnly = false;
+
+	@Nullable
+	public static Configuration getConfig() {
+		return config;
+	}
+
+	public static String getCategory() {
+		return category;
+	}
 
 	public static boolean isToggledEnabled() {
 		return toggledEnabled;
@@ -42,18 +51,20 @@ public class Config {
 	}
 
 	public static void increaseZoom() {
-		setZoomAmount(getZoomAmount() * 1.1f);
+		int newZoomAmount = Math.round(getZoomAmount() * 1.1f);
+		setZoomAmount(newZoomAmount);
 	}
 
 	public static void decreaseZoom() {
-		setZoomAmount(getZoomAmount() / 1.1f);
+		int newZoomAmount = Math.round(getZoomAmount() / 1.1f);
+		setZoomAmount(newZoomAmount);
 	}
 
-	public static float getZoomAmount() {
+	public static int getZoomAmount() {
 		return zoomAmount;
 	}
 
-	public static void setZoomAmount(float zoomAmount) {
+	public static void setZoomAmount(int zoomAmount) {
 		if (zoomAmount > MAX_ZOOM) {
 			zoomAmount = MAX_ZOOM;
 		} else if (zoomAmount < MIN_ZOOM) {
@@ -81,15 +92,22 @@ public class Config {
 	public static void preInit(FMLPreInitializationEvent event) {
 		File configFile = new File(event.getModConfigurationDirectory(), ItemZoom.MOD_ID + ".cfg");
 		config = new Configuration(configFile, "1.0");
+		load();
+	}
 
-		String configComment = I18n.format("config.itemzoom.toggle.enabled");
-		toggledEnabled = config.getBoolean("toggled.enabled", category, true, configComment);
+	public static void load() {
+		if (config == null) {
+			return;
+		}
 
-		configComment = I18n.format("config.itemzoom.zoom.amount");
-		zoomAmount = config.getFloat("zoom.amount", category, DEFAULT_ZOOM, MIN_ZOOM, MAX_ZOOM, configComment);
+		String configComment = I18n.format("config.itemzoom.toggle.enabled.comment");
+		toggledEnabled = config.getBoolean("toggled.enabled", category, true, configComment, "config.itemzoom.toggle.enabled");
 
-		configComment = I18n.format("config.itemzoom.jei.only");
-		jeiOnly = config.getBoolean("jei.only", category, false, configComment);
+		configComment = I18n.format("config.itemzoom.zoom.amount.comment");
+		zoomAmount = config.getInt("zoom.amount", category, DEFAULT_ZOOM, MIN_ZOOM, MAX_ZOOM, configComment, "config.itemzoom.zoom.amount");
+
+		configComment = I18n.format("config.itemzoom.jei.only.comment");
+		jeiOnly = config.getBoolean("jei.only", category, false, configComment, "config.itemzoom.jei.only");
 
 		if (config.hasChanged()) {
 			config.save();

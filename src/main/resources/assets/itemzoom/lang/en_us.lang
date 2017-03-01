@@ -5,6 +5,11 @@ key.itemzoom.zoom.in=Zoom In
 key.itemzoom.zoom.out=Zoom Out
 
 # Config
-config.itemzoom.toggle.enabled=True if Item Zoom has been toggled On
+config.itemzoom.toggle.enabled=Toggle Enabled
+config.itemzoom.toggle.enabled.comment=True if Item Zoom has been toggled On.
 config.itemzoom.zoom.amount=Zoom Amount
-config.itemzoom.jei.only=Only zoom items from the JEI list
+config.itemzoom.zoom.amount.comment=Set lower to make the item zoom less.
+config.itemzoom.jei.only=JEI List Only
+config.itemzoom.jei.only.comment=Only zoom items from the JEI list.
+
+config.itemzoom.title=%MODNAME Config
