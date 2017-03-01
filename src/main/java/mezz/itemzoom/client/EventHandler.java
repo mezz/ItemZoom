@@ -56,6 +56,8 @@ public class EventHandler {
 		GuiScreen currentScreen = minecraft.currentScreen;
 		if (currentScreen instanceof GuiContainer) {
 			GuiContainer guiContainer = (GuiContainer) currentScreen;
+			itemStack = itemStack.copy();
+			itemStack.setCount(1);
 			renderZoomedStack(itemStack, guiContainer, minecraft);
 		}
 	}

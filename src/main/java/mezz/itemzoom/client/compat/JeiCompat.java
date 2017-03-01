@@ -12,10 +12,9 @@ public class JeiCompat {
 		Optional<IItemListOverlay> itemListOverlay = JeiCompat.itemListOverlay;
 		if (itemListOverlay.isPresent()) {
 			ItemStack stackUnderMouse = itemListOverlay.get().getStackUnderMouse();
-			if (stackUnderMouse == null) {
-				return ItemStack.EMPTY;
+			if (stackUnderMouse != null) {
+				return stackUnderMouse;
 			}
-			return stackUnderMouse;
 		}
 		return ItemStack.EMPTY;
 	}
