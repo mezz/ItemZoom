@@ -2,6 +2,7 @@ package mezz.itemzoom.client;
 
 import mezz.itemzoom.ItemZoom;
 import mezz.itemzoom.client.compat.JeiCompat;
+import mezz.itemzoom.client.config.Config;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.GuiScreen;
@@ -12,6 +13,7 @@ import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.client.event.RenderTooltipEvent;
+import net.minecraftforge.fml.client.event.ConfigChangedEvent;
 import net.minecraftforge.fml.common.eventhandler.EventPriority;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.relauncher.Side;
@@ -55,6 +57,13 @@ public class EventHandler {
 		}
 	}
 
+	@SubscribeEvent
+	public void onConfigChanged(ConfigChangedEvent.OnConfigChangedEvent eventArgs) {
+		if (ItemZoom.MOD_ID.equals(eventArgs.getModID())) {
+			Config.load();
+		}
+	}
+
 	private static boolean isEnableKeyHeld() {
 		if (Keyboard.getEventKeyState()) {
 			int eventKey = Keyboard.getEventKey();
@@ -67,7 +76,7 @@ public class EventHandler {
 
 	private static void renderZoomedStack(ItemStack itemStack, GuiContainer guiContainer, Minecraft minecraft) {
 		ScaledResolution scaledResolution = new ScaledResolution(minecraft);
-		final float scale = Config.getZoomAmount() * guiContainer.guiLeft / 17f; // item is 16 wide, give it some extra space on each side
+		final float scale = Config.getZoomAmount() / 100f * guiContainer.guiLeft / 17f; // item is 16 wide, give it some extra space on each side
 		final float xPosition = (guiContainer.guiLeft / scale - 16f) / 2f;
 		final float yPosition = (scaledResolution.getScaledHeight() / scale - 16f) / 2f;
 		FontRenderer font = getFontRenderer(minecraft, itemStack);
