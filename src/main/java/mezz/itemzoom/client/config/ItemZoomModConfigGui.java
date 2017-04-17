@@ -5,7 +5,7 @@ import java.util.List;
 
 import mezz.itemzoom.ItemZoom;
 import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.client.resources.I18n;
+import net.minecraft.util.text.translation.I18n;
 import net.minecraftforge.common.config.ConfigCategory;
 import net.minecraftforge.common.config.ConfigElement;
 import net.minecraftforge.common.config.Configuration;
@@ -30,6 +30,13 @@ public class ItemZoomModConfigGui extends GuiConfig {
 	}
 
 	private static String getTitle() {
-		return I18n.format("config.itemzoom.title").replace("%MODNAME", ItemZoom.MOD_NAME);
+		String titleFormatKey = "config.itemzoom.title";
+		String titleFormat;
+		if (I18n.canTranslate(titleFormatKey)) {
+			titleFormat = I18n.translateToLocal(titleFormatKey);
+		} else {
+			titleFormat = I18n.translateToFallback(titleFormatKey);
+		}
+		return titleFormat.replace("%MODNAME", ItemZoom.MOD_NAME);
 	}
 }
