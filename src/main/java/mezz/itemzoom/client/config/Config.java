@@ -24,6 +24,7 @@ public class Config {
 	private static boolean toggledEnabled = true;
 	private static int zoomAmount = DEFAULT_ZOOM;
 	private static boolean jeiOnly = false;
+	private static boolean showHelpText = true;
 
 	@Nullable
 	public static Configuration getConfig() {
@@ -62,6 +63,10 @@ public class Config {
 
 	public static int getZoomAmount() {
 		return zoomAmount;
+	}
+
+	public static boolean showHelpText() {
+		return showHelpText;
 	}
 
 	public static void setZoomAmount(int zoomAmount) {
@@ -108,6 +113,9 @@ public class Config {
 
 		configComment = I18n.format("config.itemzoom.jei.only.comment");
 		jeiOnly = config.getBoolean("jei.only", category, false, configComment, "config.itemzoom.jei.only");
+
+		configComment = I18n.format("config.itemzoom.show.help.text.comment");
+		showHelpText = config.getBoolean("show.help.text", category, true, configComment, "config.itemzoom.show.help.text");
 
 		if (config.hasChanged()) {
 			config.save();

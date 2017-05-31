@@ -100,18 +100,20 @@ public class EventHandler {
 
 		GlStateManager.popMatrix();
 
-		String modName = ItemZoom.MOD_NAME;
-		int stringWidth = font.getStringWidth(modName);
-		int x = (guiContainer.getGuiLeft() - stringWidth) / 2;
-		int y = (scaledResolution.getScaledHeight() + Math.round(17 * scale)) / 2;
-		font.drawString(modName, x, y, 4210752);
+		if (Config.showHelpText()) {
+			String modName = ItemZoom.MOD_NAME;
+			int stringWidth = font.getStringWidth(modName);
+			int x = (guiContainer.getGuiLeft() - stringWidth) / 2;
+			int y = (scaledResolution.getScaledHeight() + Math.round(17 * scale)) / 2;
+			font.drawString(modName, x, y, 4210752);
 
-		if (Config.isToggledEnabled()) {
-			String toggleText = KeyBindings.TOGGLE.getDisplayName();
-			stringWidth = font.getStringWidth(toggleText);
-			x = (guiContainer.getGuiLeft() - stringWidth) / 2;
-			y += font.FONT_HEIGHT;
-			font.drawString(toggleText, x, y, 4210752);
+			if (Config.isToggledEnabled()) {
+				String toggleText = KeyBindings.TOGGLE.getDisplayName();
+				stringWidth = font.getStringWidth(toggleText);
+				x = (guiContainer.getGuiLeft() - stringWidth) / 2;
+				y += font.FONT_HEIGHT;
+				font.drawString(toggleText, x, y, 4210752);
+			}
 		}
 	}
 
