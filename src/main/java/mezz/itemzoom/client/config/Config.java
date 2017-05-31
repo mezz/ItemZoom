@@ -19,7 +19,7 @@ public class Config {
 	private static final String category = "itemzoom";
 	private static final int MIN_ZOOM = 10;
 	private static final int MAX_ZOOM = 100;
-	private static final int DEFAULT_ZOOM = MAX_ZOOM;
+	private static final int DEFAULT_ZOOM = 80;
 
 	private static boolean toggledEnabled = true;
 	private static int zoomAmount = DEFAULT_ZOOM;
