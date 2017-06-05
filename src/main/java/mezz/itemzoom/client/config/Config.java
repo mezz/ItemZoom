@@ -25,6 +25,8 @@ public class Config {
 	private static int zoomAmount = DEFAULT_ZOOM;
 	private static boolean jeiOnly = false;
 	private static boolean showHelpText = true;
+	private static boolean showDamageBar = false;
+	private static boolean showStackSize = false;
 
 	@Nullable
 	public static Configuration getConfig() {
@@ -67,6 +69,14 @@ public class Config {
 
 	public static boolean showHelpText() {
 		return showHelpText;
+	}
+
+	public static boolean showDamageBar() {
+		return showDamageBar;
+	}
+
+	public static boolean showStackSize() {
+		return showStackSize;
 	}
 
 	public static void setZoomAmount(int zoomAmount) {
@@ -116,6 +126,12 @@ public class Config {
 
 		configComment = I18n.format("config.itemzoom.show.help.text.comment");
 		showHelpText = config.getBoolean("show.help.text", category, true, configComment, "config.itemzoom.show.help.text");
+
+		configComment = I18n.format("config.itemzoom.show.damage.bar.comment");
+		showDamageBar = config.getBoolean("show.damage.bar", category, false, configComment, "config.itemzoom.show.damage.bar");
+
+		configComment = I18n.format("config.itemzoom.show.stack.size.comment");
+		showStackSize = config.getBoolean("show.stack.size", category, false, configComment, "config.itemzoom.show.stack.size");
 
 		if (config.hasChanged()) {
 			config.save();

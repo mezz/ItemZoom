@@ -57,7 +57,12 @@ public class EventHandler {
 		if (currentScreen instanceof GuiContainer) {
 			GuiContainer guiContainer = (GuiContainer) currentScreen;
 			itemStack = itemStack.copy();
-			itemStack.setCount(1);
+			if (!Config.showStackSize()) {
+				itemStack.setCount(1);
+			}
+			if (!Config.showDamageBar()) {
+				itemStack.setItemDamage(0);
+			}
 			renderZoomedStack(itemStack, guiContainer, minecraft);
 		}
 	}

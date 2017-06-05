@@ -13,5 +13,9 @@ config.itemzoom.jei.only=JEI List Only
 config.itemzoom.jei.only.comment=Only zoom items from the JEI list.
 config.itemzoom.show.help.text=Show Help Text
 config.itemzoom.show.help.text.comment=Shows "Item Zoom" and the hotkey to disable it below the zoomed image.
+config.itemzoom.show.damage.bar=Show Damage Bar
+config.itemzoom.show.damage.bar.comment=Show the item's damage bar when zoomed.
+config.itemzoom.show.stack.size=Show Stack Size
+config.itemzoom.show.stack.size.comment=Show the item's stack size when zoomed.
 
 config.itemzoom.title=%MODNAME Config
