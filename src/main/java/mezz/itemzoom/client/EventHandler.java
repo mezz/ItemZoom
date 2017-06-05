@@ -4,13 +4,18 @@ import mezz.itemzoom.ItemZoom;
 import mezz.itemzoom.client.compat.JeiCompat;
 import mezz.itemzoom.client.config.Config;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.RenderHelper;
+import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.client.renderer.VertexBuffer;
+import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.math.MathHelper;
 import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.client.event.RenderTooltipEvent;
 import net.minecraftforge.fml.client.event.ConfigChangedEvent;
@@ -45,6 +50,7 @@ public class EventHandler {
 			return;
 		}
 		ItemStack itemStack = event.getStack();
+		//noinspection ConstantConditions
 		if (itemStack == null || itemStack.isEmpty()) {
 			return;
 		}
@@ -56,13 +62,6 @@ public class EventHandler {
 		GuiScreen currentScreen = minecraft.currentScreen;
 		if (currentScreen instanceof GuiContainer) {
 			GuiContainer guiContainer = (GuiContainer) currentScreen;
-			itemStack = itemStack.copy();
-			if (!Config.showStackSize()) {
-				itemStack.setCount(1);
-			}
-			if (!Config.showDamageBar()) {
-				itemStack.setItemDamage(0);
-			}
 			renderZoomedStack(itemStack, guiContainer, minecraft);
 		}
 	}
@@ -98,7 +97,7 @@ public class EventHandler {
 
 		minecraft.getRenderItem().zLevel += 100;
 		minecraft.getRenderItem().renderItemAndEffectIntoGUI(minecraft.player, itemStack, 0, 0);
-		minecraft.getRenderItem().renderItemOverlayIntoGUI(font, itemStack, 0, 0, null);
+		renderItemOverlayIntoGUI(font, itemStack);
 		minecraft.getRenderItem().zLevel -= 100;
 		GlStateManager.disableBlend();
 		RenderHelper.disableStandardItemLighting();
@@ -129,4 +128,66 @@ public class EventHandler {
 		}
 		return fontRenderer;
 	}
+
+	public static void renderItemOverlayIntoGUI(FontRenderer fr, ItemStack stack) {
+		if (!stack.isEmpty()) {
+			if (Config.showStackSize() && stack.getCount() != 1) {
+				String s = String.valueOf(stack.getCount());
+				GlStateManager.disableLighting();
+				GlStateManager.disableDepth();
+				GlStateManager.disableBlend();
+				fr.drawStringWithShadow(s, (float) (17 - fr.getStringWidth(s)), 9f, 16777215);
+				GlStateManager.enableLighting();
+				GlStateManager.enableDepth();
+				// Fixes opaque cooldown overlay a bit lower
+				// TODO: check if enabled blending still screws things up down the line.
+				GlStateManager.enableBlend();
+			}
+
+			if (Config.showDamageBar() && stack.getItem().showDurabilityBar(stack)) {
+				GlStateManager.disableLighting();
+				GlStateManager.disableDepth();
+				GlStateManager.disableTexture2D();
+				GlStateManager.disableAlpha();
+				GlStateManager.disableBlend();
+				Tessellator tessellator = Tessellator.getInstance();
+				VertexBuffer vertexbuffer = tessellator.getBuffer();
+				double health = stack.getItem().getDurabilityForDisplay(stack);
+				int rgbfordisplay = stack.getItem().getRGBDurabilityForDisplay(stack);
+				int i = Math.round(13.0F - (float) health * 13.0F);
+				draw(vertexbuffer, 2, 13, 13, 2, 0, 0, 0, 255);
+				draw(vertexbuffer, 2, 13, i, 1, rgbfordisplay >> 16 & 255, rgbfordisplay >> 8 & 255, rgbfordisplay & 255, 255);
+				GlStateManager.enableBlend();
+				GlStateManager.enableAlpha();
+				GlStateManager.enableTexture2D();
+				GlStateManager.enableLighting();
+				GlStateManager.enableDepth();
+			}
+
+			EntityPlayerSP entityplayersp = Minecraft.getMinecraft().player;
+			float f3 = entityplayersp == null ? 0.0F : entityplayersp.getCooldownTracker().getCooldown(stack.getItem(), Minecraft.getMinecraft().getRenderPartialTicks());
+
+			if (f3 > 0.0F) {
+				GlStateManager.disableLighting();
+				GlStateManager.disableDepth();
+				GlStateManager.disableTexture2D();
+				Tessellator tessellator1 = Tessellator.getInstance();
+				VertexBuffer vertexbuffer1 = tessellator1.getBuffer();
+				draw(vertexbuffer1, 0, MathHelper.floor(16.0F * (1.0F - f3)), 16, MathHelper.ceil(16.0F * f3), 255, 255, 255, 127);
+				GlStateManager.enableTexture2D();
+				GlStateManager.enableLighting();
+				GlStateManager.enableDepth();
+			}
+		}
+	}
+
+	private static void draw(VertexBuffer renderer, int x, int y, int width, int height, int red, int green, int blue, int alpha) {
+		renderer.begin(7, DefaultVertexFormats.POSITION_COLOR);
+		renderer.pos((double) (x), (double) (y), 0.0D).color(red, green, blue, alpha).endVertex();
+		renderer.pos((double) (x), (double) (y + height), 0.0D).color(red, green, blue, alpha).endVertex();
+		renderer.pos((double) (x + width), (double) (y + height), 0.0D).color(red, green, blue, alpha).endVertex();
+		renderer.pos((double) (x + width), (double) (y), 0.0D).color(red, green, blue, alpha).endVertex();
+		Tessellator.getInstance().draw();
+	}
+
 }
