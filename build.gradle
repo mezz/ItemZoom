@@ -4,14 +4,14 @@ buildscript {
         maven { url = "http://files.minecraftforge.net/maven" }
     }
     dependencies {
-        classpath 'net.minecraftforge.gradle:ForgeGradle:2.2-SNAPSHOT'
+        classpath 'net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT'
     }
 }
 apply plugin: 'net.minecraftforge.gradle.forge'
 
 version = version_major + '.' + version_minor
 group = "mezz.itemzoom" // http://maven.apache.org/guides/mini/guide-naming-conventions.html
-archivesBaseName = "itemzoom" + mcversion
+archivesBaseName = "itemzoom_" + mcversion
 
 sourceCompatibility = targetCompatibility = JavaVersion.VERSION_1_6 // Need this here so eclipse task generates correctly.
 compileJava {
