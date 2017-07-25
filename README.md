@@ -1,5 +1,5 @@
-[![Item Zoom Downloads](http://cf.way2muchnoise.eu/full_item-zoom_downloads.svg)](http://minecraft.curseforge.com/projects/item-zoom/)
-[![Item Zoom MC Versions](http://cf.way2muchnoise.eu/versions/Minecraft_item-zoom_all.svg)](http://minecraft.curseforge.com/projects/item-zoom/)
+[![Item Zoom Downloads](http://cf.way2muchnoise.eu/full_itemzoom_downloads.svg)](http://minecraft.curseforge.com/projects/itemzoom/)
+[![Item Zoom MC Versions](http://cf.way2muchnoise.eu/versions/Minecraft_itemzoom_all.svg)](http://minecraft.curseforge.com/projects/itemzoom/)
 
 # [Item Zoom](https://minecraft.curseforge.com/projects/itemzoom/)
 A simple mod that shows a big version of whatever item you hover over.
