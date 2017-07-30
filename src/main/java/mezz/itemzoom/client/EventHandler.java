@@ -9,10 +9,10 @@ import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.gui.inventory.GuiContainer;
+import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.VertexBuffer;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.math.MathHelper;
@@ -124,7 +124,7 @@ public class EventHandler {
 	private static FontRenderer getFontRenderer(Minecraft minecraft, ItemStack itemStack) {
 		FontRenderer fontRenderer = itemStack.getItem().getFontRenderer(itemStack);
 		if (fontRenderer == null) {
-			fontRenderer = minecraft.fontRendererObj;
+			fontRenderer = minecraft.fontRenderer;
 		}
 		return fontRenderer;
 	}
@@ -151,12 +151,12 @@ public class EventHandler {
 				GlStateManager.disableAlpha();
 				GlStateManager.disableBlend();
 				Tessellator tessellator = Tessellator.getInstance();
-				VertexBuffer vertexbuffer = tessellator.getBuffer();
+				BufferBuilder bufferBuilder = tessellator.getBuffer();
 				double health = stack.getItem().getDurabilityForDisplay(stack);
 				int rgbfordisplay = stack.getItem().getRGBDurabilityForDisplay(stack);
 				int i = Math.round(13.0F - (float) health * 13.0F);
-				draw(vertexbuffer, 2, 13, 13, 2, 0, 0, 0, 255);
-				draw(vertexbuffer, 2, 13, i, 1, rgbfordisplay >> 16 & 255, rgbfordisplay >> 8 & 255, rgbfordisplay & 255, 255);
+				draw(bufferBuilder, 2, 13, 13, 2, 0, 0, 0, 255);
+				draw(bufferBuilder, 2, 13, i, 1, rgbfordisplay >> 16 & 255, rgbfordisplay >> 8 & 255, rgbfordisplay & 255, 255);
 				GlStateManager.enableBlend();
 				GlStateManager.enableAlpha();
 				GlStateManager.enableTexture2D();
@@ -172,8 +172,8 @@ public class EventHandler {
 				GlStateManager.disableDepth();
 				GlStateManager.disableTexture2D();
 				Tessellator tessellator1 = Tessellator.getInstance();
-				VertexBuffer vertexbuffer1 = tessellator1.getBuffer();
-				draw(vertexbuffer1, 0, MathHelper.floor(16.0F * (1.0F - f3)), 16, MathHelper.ceil(16.0F * f3), 255, 255, 255, 127);
+				BufferBuilder bufferBuilder = tessellator1.getBuffer();
+				draw(bufferBuilder, 0, MathHelper.floor(16.0F * (1.0F - f3)), 16, MathHelper.ceil(16.0F * f3), 255, 255, 255, 127);
 				GlStateManager.enableTexture2D();
 				GlStateManager.enableLighting();
 				GlStateManager.enableDepth();
@@ -181,7 +181,7 @@ public class EventHandler {
 		}
 	}
 
-	private static void draw(VertexBuffer renderer, int x, int y, int width, int height, int red, int green, int blue, int alpha) {
+	private static void draw(BufferBuilder renderer, int x, int y, int width, int height, int red, int green, int blue, int alpha) {
 		renderer.begin(7, DefaultVertexFormats.POSITION_COLOR);
 		renderer.pos((double) (x), (double) (y), 0.0D).color(red, green, blue, alpha).endVertex();
 		renderer.pos((double) (x), (double) (y + height), 0.0D).color(red, green, blue, alpha).endVertex();

@@ -1,16 +1,12 @@
-[
-{
+[{
   "modid": "itemzoom",
   "name": "Item Zoom",
   "description": "Shows a big version of the item you hover over.",
   "version": "${version}",
   "mcversion": "${mcversion}",
-  "url": "https://github.com/mezz/ItemZoom",
-  "updateUrl": "",
-  "authorList": ["mezz"],
-  "credits": "",
   "logoFile": "",
-  "screenshots": [],
-  "dependencies": []
-}
-]
+  "url": "https://minecraft.curseforge.com/projects/itemzoom/",
+  "updateJSON": "",
+  "authorList": ["mezz"],
+  "credits": ""
+}]

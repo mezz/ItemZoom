@@ -26,20 +26,9 @@ public class ItemZoomModGuiFactory implements IModGuiFactory {
 		return new ItemZoomModConfigGui(parentScreen);
 	}
 
-	@Override
-	public Class<? extends GuiScreen> mainConfigGuiClass() {
-		return ItemZoomModConfigGui.class;
-	}
-
 	@Nullable
 	@Override
 	public Set<RuntimeOptionCategoryElement> runtimeGuiCategories() {
-		return null;
-	}
-
-	@Nullable
-	@Override
-	public RuntimeOptionGuiHandler getHandlerFor(RuntimeOptionCategoryElement element) {
 		return null;
 	}
 }

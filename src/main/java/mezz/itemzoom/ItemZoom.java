@@ -14,8 +14,10 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 		modid = ItemZoom.MOD_ID,
 		name = ItemZoom.MOD_NAME,
 		version = ItemZoom.VERSION,
-		guiFactory = "mezz.itemzoom.client.config.ItemZoomModGuiFactory",
-		clientSideOnly = true
+		dependencies = "required-after:forge@[14.21.1.2387,)",
+		clientSideOnly = true,
+        acceptedMinecraftVersions = "[1.12,)",
+		guiFactory = "mezz.itemzoom.client.config.ItemZoomModGuiFactory"
 )
 public class ItemZoom {
 	public static final String MOD_NAME = "Item Zoom";
