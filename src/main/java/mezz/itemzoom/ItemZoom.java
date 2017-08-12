@@ -1,8 +1,8 @@
 package mezz.itemzoom;
 
-import mezz.itemzoom.client.config.Config;
 import mezz.itemzoom.client.EventHandler;
 import mezz.itemzoom.client.KeyBindings;
+import mezz.itemzoom.client.config.Config;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
@@ -16,7 +16,7 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 		version = ItemZoom.VERSION,
 		dependencies = "required-after:forge@[14.21.1.2387,)",
 		clientSideOnly = true,
-        acceptedMinecraftVersions = "[1.12,)",
+    acceptedMinecraftVersions = "[1.12,)",
 		guiFactory = "mezz.itemzoom.client.config.ItemZoomModGuiFactory"
 )
 public class ItemZoom {
