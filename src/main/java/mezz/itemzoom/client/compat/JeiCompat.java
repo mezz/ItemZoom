@@ -1,19 +1,20 @@
 package mezz.itemzoom.client.compat;
 
-import com.google.common.base.Optional;
-import mezz.jei.api.IItemListOverlay;
+import java.util.Optional;
+
+import mezz.jei.api.IIngredientListOverlay;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.fml.common.Loader;
 
 public class JeiCompat {
-	public static Optional<IItemListOverlay> itemListOverlay = Optional.absent();
+	public static Optional<IIngredientListOverlay> ingredientListOverlay = Optional.empty();
 
 	public static ItemStack getStackUnderMouse() {
-		Optional<IItemListOverlay> itemListOverlay = JeiCompat.itemListOverlay;
-		if (itemListOverlay.isPresent()) {
-			ItemStack stackUnderMouse = itemListOverlay.get().getStackUnderMouse();
-			if (stackUnderMouse != null) {
-				return stackUnderMouse;
+		Optional<IIngredientListOverlay> ingredientListOverlay = JeiCompat.ingredientListOverlay;
+		if (ingredientListOverlay.isPresent()) {
+			Object ingredientUnderMouse = ingredientListOverlay.get().getIngredientUnderMouse();
+			if (ingredientUnderMouse instanceof ItemStack) {
+				return (ItemStack) ingredientUnderMouse;
 			}
 		}
 		return ItemStack.EMPTY;

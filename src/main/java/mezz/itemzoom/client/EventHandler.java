@@ -27,6 +27,9 @@ import org.lwjgl.input.Keyboard;
 
 @SideOnly(Side.CLIENT)
 public class EventHandler {
+	public static boolean rendering = false;
+	private static boolean renderedThisFrame = false;
+
 	@SubscribeEvent(priority = EventPriority.LOW)
 	public void onGuiKeyboardEvent(GuiScreenEvent.KeyboardInputEvent.Post event) {
 		if (Keyboard.getEventKeyState()) {
@@ -62,8 +65,17 @@ public class EventHandler {
 		GuiScreen currentScreen = minecraft.currentScreen;
 		if (currentScreen instanceof GuiContainer) {
 			GuiContainer guiContainer = (GuiContainer) currentScreen;
-			renderZoomedStack(itemStack, guiContainer, minecraft);
+			if (event.getX() > guiContainer.getGuiLeft()) { // avoid rendering items in the same space as the item
+				renderZoomedStack(itemStack, guiContainer, minecraft);
+				renderedThisFrame = true;
+			}
 		}
+	}
+
+	@SubscribeEvent
+	public void onDrawScreenPost(GuiScreenEvent.DrawScreenEvent.Post event) {
+		rendering = renderedThisFrame;
+		renderedThisFrame = false;
 	}
 
 	@SubscribeEvent

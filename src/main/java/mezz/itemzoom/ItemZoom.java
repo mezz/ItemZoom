@@ -14,7 +14,8 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 		modid = ItemZoom.MOD_ID,
 		name = ItemZoom.MOD_NAME,
 		version = ItemZoom.VERSION,
-		dependencies = "required-after:forge@[14.21.1.2387,)",
+		dependencies = "required-after:forge@[14.21.1.2387,);" + // first version with the needed tooltip events
+				"after:jei@[4.6.0,);", // first version with default methods on IModPlugin
 		clientSideOnly = true,
 		acceptedMinecraftVersions = "[1.12,)",
 		guiFactory = "mezz.itemzoom.client.config.ItemZoomModGuiFactory"
