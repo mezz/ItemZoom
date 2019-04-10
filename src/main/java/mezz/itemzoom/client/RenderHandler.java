@@ -1,5 +1,7 @@
 package mezz.itemzoom.client;
 
+import java.util.function.Supplier;
+
 import mezz.itemzoom.ItemZoom;
 import mezz.itemzoom.client.compat.JeiCompat;
 import mezz.itemzoom.client.config.Config;
@@ -7,7 +9,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.GlStateManager;
@@ -16,115 +17,80 @@ import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.math.MathHelper;
-import net.minecraftforge.client.event.GuiScreenEvent;
-import net.minecraftforge.client.event.RenderTooltipEvent;
-import net.minecraftforge.fml.client.event.ConfigChangedEvent;
-import net.minecraftforge.fml.common.eventhandler.EventPriority;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
-import org.lwjgl.input.Keyboard;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
-@SideOnly(Side.CLIENT)
-public class EventHandler {
+@OnlyIn(Dist.CLIENT)
+public class RenderHandler {
 	public static boolean rendering = false;
 	private static boolean renderedThisFrame = false;
+	private final Config config;
+	private final Supplier<Boolean> isEnableKeyHeld;
+	private final String toggleText;
 
-	@SubscribeEvent(priority = EventPriority.LOW)
-	public void onGuiKeyboardEvent(GuiScreenEvent.KeyboardInputEvent.Post event) {
-		if (Keyboard.getEventKeyState()) {
-			int eventKey = Keyboard.getEventKey();
-			if (KeyBindings.TOGGLE.isActiveAndMatches(eventKey)) {
-				Config.toggleEnabled();
-				event.setCanceled(true);
-			} else if (KeyBindings.ZOOM_IN.isActiveAndMatches(eventKey)) {
-				Config.increaseZoom();
-				event.setCanceled(true);
-			} else if (KeyBindings.ZOOM_OUT.isActiveAndMatches(eventKey)) {
-				Config.decreaseZoom();
-				event.setCanceled(true);
-			}
-		}
+	public RenderHandler(Config config, Supplier<Boolean> isEnableKeyHeld, String toggleText) {
+		this.config = config;
+		this.isEnableKeyHeld = isEnableKeyHeld;
+		this.toggleText = toggleText;
 	}
 
-	@SubscribeEvent(priority = EventPriority.LOW)
-	public void onItemStackTooltip(RenderTooltipEvent.Pre event) {
-		if (!Config.isToggledEnabled() && !isEnableKeyHeld()) {
+	public void onScreenDrawn() {
+		rendering = renderedThisFrame;
+		renderedThisFrame = false;
+	}
+
+	public void onItemStackTooltip(ItemStack itemStack, int x) {
+		if (!config.isToggledEnabled() && !isEnableKeyHeld.get()) {
 			return;
 		}
-		ItemStack itemStack = event.getStack();
 		//noinspection ConstantConditions
 		if (itemStack == null || itemStack.isEmpty()) {
 			return;
 		}
-		if (Config.isJeiOnly() && !ItemStack.areItemStacksEqual(itemStack, JeiCompat.getStackUnderMouse())) {
+		if (config.isJeiOnly() && !ItemStack.areItemStacksEqual(itemStack, JeiCompat.getStackUnderMouse())) {
 			return;
 		}
 
-		Minecraft minecraft = Minecraft.getMinecraft();
+		Minecraft minecraft = Minecraft.getInstance();
 		GuiScreen currentScreen = minecraft.currentScreen;
 		if (currentScreen instanceof GuiContainer) {
 			GuiContainer guiContainer = (GuiContainer) currentScreen;
-			if (event.getX() > guiContainer.getGuiLeft()) { // avoid rendering items in the same space as the item
+			if (x > guiContainer.getGuiLeft()) { // avoid rendering items in the same space as the item
 				renderZoomedStack(itemStack, guiContainer, minecraft);
 				renderedThisFrame = true;
 			}
 		}
 	}
 
-	@SubscribeEvent
-	public void onDrawScreenPost(GuiScreenEvent.DrawScreenEvent.Post event) {
-		rendering = renderedThisFrame;
-		renderedThisFrame = false;
-	}
-
-	@SubscribeEvent
-	public void onConfigChanged(ConfigChangedEvent.OnConfigChangedEvent eventArgs) {
-		if (ItemZoom.MOD_ID.equals(eventArgs.getModID())) {
-			Config.load();
-		}
-	}
-
-	private static boolean isEnableKeyHeld() {
-		if (Keyboard.getEventKeyState()) {
-			int eventKey = Keyboard.getEventKey();
-			if (KeyBindings.HOLD.isActiveAndMatches(eventKey)) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	private static void renderZoomedStack(ItemStack itemStack, GuiContainer guiContainer, Minecraft minecraft) {
-		ScaledResolution scaledResolution = new ScaledResolution(minecraft);
-		final float scale = Config.getZoomAmount() / 100f * guiContainer.getGuiLeft() / 17f; // item is 16 wide, give it some extra space on each side
+	private void renderZoomedStack(ItemStack itemStack, GuiContainer guiContainer, Minecraft minecraft) {
+		final int scaledHeight = minecraft.mainWindow.getScaledHeight();
+		final float scale = config.getZoomAmount() / 100f * guiContainer.getGuiLeft() / 17f; // item is 16 wide, give it some extra space on each side
 		final float xPosition = (guiContainer.getGuiLeft() / scale - 16f) / 2f;
-		final float yPosition = (scaledResolution.getScaledHeight() / scale - 16f) / 2f;
+		final float yPosition = (scaledHeight / scale - 16f) / 2f;
 		FontRenderer font = getFontRenderer(minecraft, itemStack);
 
 		GlStateManager.pushMatrix();
-		GlStateManager.scale(scale, scale, 1);
-		GlStateManager.translate(xPosition, yPosition, 0);
+		GlStateManager.scalef(scale, scale, 1);
+		GlStateManager.translatef(xPosition, yPosition, 0);
 		ZoomRenderHelper.enableGUIStandardItemLighting(scale);
 
-		minecraft.getRenderItem().zLevel += 100;
-		minecraft.getRenderItem().renderItemAndEffectIntoGUI(minecraft.player, itemStack, 0, 0);
+		minecraft.getItemRenderer().zLevel += 100;
+		minecraft.getItemRenderer().renderItemAndEffectIntoGUI(minecraft.player, itemStack, 0, 0);
 		renderItemOverlayIntoGUI(font, itemStack);
-		minecraft.getRenderItem().zLevel -= 100;
+		minecraft.getItemRenderer().zLevel -= 100;
 		GlStateManager.disableBlend();
 		RenderHelper.disableStandardItemLighting();
 
 		GlStateManager.popMatrix();
 
-		if (Config.showHelpText()) {
+		if (config.showHelpText()) {
 			String modName = ItemZoom.MOD_NAME;
 			int stringWidth = font.getStringWidth(modName);
 			int x = (guiContainer.getGuiLeft() - stringWidth) / 2;
-			int y = (scaledResolution.getScaledHeight() + Math.round(17 * scale)) / 2;
+			int y = (scaledHeight + Math.round(17 * scale)) / 2;
 			font.drawString(modName, x, y, 4210752);
 
-			if (Config.isToggledEnabled()) {
-				String toggleText = KeyBindings.TOGGLE.getDisplayName();
+			if (config.isToggledEnabled()) {
 				stringWidth = font.getStringWidth(toggleText);
 				x = (guiContainer.getGuiLeft() - stringWidth) / 2;
 				y += font.FONT_HEIGHT;
@@ -141,26 +107,26 @@ public class EventHandler {
 		return fontRenderer;
 	}
 
-	public static void renderItemOverlayIntoGUI(FontRenderer fr, ItemStack stack) {
+	public void renderItemOverlayIntoGUI(FontRenderer fr, ItemStack stack) {
 		if (!stack.isEmpty()) {
-			if (Config.showStackSize() && stack.getCount() != 1) {
+			if (config.showStackSize() && stack.getCount() != 1) {
 				String s = String.valueOf(stack.getCount());
 				GlStateManager.disableLighting();
-				GlStateManager.disableDepth();
+				GlStateManager.disableDepthTest();
 				GlStateManager.disableBlend();
 				fr.drawStringWithShadow(s, (float) (17 - fr.getStringWidth(s)), 9f, 16777215);
 				GlStateManager.enableLighting();
-				GlStateManager.enableDepth();
+				GlStateManager.enableDepthTest();
 				// Fixes opaque cooldown overlay a bit lower
 				// TODO: check if enabled blending still screws things up down the line.
 				GlStateManager.enableBlend();
 			}
 
-			if (Config.showDamageBar() && stack.getItem().showDurabilityBar(stack)) {
+			if (config.showDamageBar() && stack.getItem().showDurabilityBar(stack)) {
 				GlStateManager.disableLighting();
-				GlStateManager.disableDepth();
+				GlStateManager.disableDepthTest();
 				GlStateManager.disableTexture2D();
-				GlStateManager.disableAlpha();
+				GlStateManager.disableAlphaTest();
 				GlStateManager.disableBlend();
 				Tessellator tessellator = Tessellator.getInstance();
 				BufferBuilder bufferBuilder = tessellator.getBuffer();
@@ -170,25 +136,25 @@ public class EventHandler {
 				draw(bufferBuilder, 2, 13, 13, 2, 0, 0, 0, 255);
 				draw(bufferBuilder, 2, 13, i, 1, rgbfordisplay >> 16 & 255, rgbfordisplay >> 8 & 255, rgbfordisplay & 255, 255);
 				GlStateManager.enableBlend();
-				GlStateManager.enableAlpha();
+				GlStateManager.enableAlphaTest();
 				GlStateManager.enableTexture2D();
 				GlStateManager.enableLighting();
-				GlStateManager.enableDepth();
+				GlStateManager.enableDepthTest();
 			}
 
-			EntityPlayerSP entityplayersp = Minecraft.getMinecraft().player;
-			float f3 = entityplayersp == null ? 0.0F : entityplayersp.getCooldownTracker().getCooldown(stack.getItem(), Minecraft.getMinecraft().getRenderPartialTicks());
+			EntityPlayerSP entityplayersp = Minecraft.getInstance().player;
+			float f3 = entityplayersp == null ? 0.0F : entityplayersp.getCooldownTracker().getCooldown(stack.getItem(), Minecraft.getInstance().getRenderPartialTicks());
 
 			if (f3 > 0.0F) {
 				GlStateManager.disableLighting();
-				GlStateManager.disableDepth();
+				GlStateManager.disableDepthTest();
 				GlStateManager.disableTexture2D();
-				Tessellator tessellator1 = Tessellator.getInstance();
-				BufferBuilder bufferBuilder = tessellator1.getBuffer();
+				Tessellator tessellator = Tessellator.getInstance();
+				BufferBuilder bufferBuilder = tessellator.getBuffer();
 				draw(bufferBuilder, 0, MathHelper.floor(16.0F * (1.0F - f3)), 16, MathHelper.ceil(16.0F * f3), 255, 255, 255, 127);
 				GlStateManager.enableTexture2D();
 				GlStateManager.enableLighting();
-				GlStateManager.enableDepth();
+				GlStateManager.enableDepthTest();
 			}
 		}
 	}

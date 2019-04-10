@@ -1,140 +1,133 @@
 package mezz.itemzoom.client.config;
 
-import javax.annotation.Nullable;
-import java.io.File;
-
-import mezz.itemzoom.ItemZoom;
 import mezz.itemzoom.client.compat.JeiCompat;
 import net.minecraft.client.resources.I18n;
-import net.minecraftforge.common.config.Configuration;
-import net.minecraftforge.common.config.Property;
-import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.common.ForgeConfigSpec;
+import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
 
-@SideOnly(Side.CLIENT)
+@OnlyIn(Dist.CLIENT)
 public class Config {
-	@Nullable
-	private static Configuration config;
-	private static final String category = "itemzoom";
 	private static final int MIN_ZOOM = 10;
 	private static final int MAX_ZOOM = 100;
 	private static final int DEFAULT_ZOOM = 80;
 
-	private static boolean toggledEnabled = true;
-	private static int zoomAmount = DEFAULT_ZOOM;
-	private static boolean jeiOnly = false;
-	private static boolean showHelpText = true;
-	private static boolean showDamageBar = false;
-	private static boolean showStackSize = false;
+	private final ConfigValue<Boolean> toggledEnabled;
+	private final ConfigValue<Integer> zoomAmount;
+	private final ConfigValue<Boolean> jeiOnly;
+	private final ConfigValue<Boolean> showHelpText;
+	private final ConfigValue<Boolean> showDamageBar;
+	private final ConfigValue<Boolean> showStackSize;
+	private ForgeConfigSpec configSpec;
 
-	@Nullable
-	public static Configuration getConfig() {
-		return config;
+	public Config() {
+		ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder();
+		builder.push("itemzoom");
+
+		toggledEnabled = builder
+				.comment(I18n.format("config.itemzoom.toggle.enabled.comment"))
+				.translation("config.itemzoom.toggle.enabled")
+				.define("toggled.enabled", true);
+
+		zoomAmount = builder
+				.comment(I18n.format("config.itemzoom.zoom.amount.comment"))
+				.translation("config.itemzoom.zoom.amount")
+				.defineInRange("zoom.amount", DEFAULT_ZOOM, MIN_ZOOM, MAX_ZOOM, Integer.class);
+
+		jeiOnly = builder
+				.comment(I18n.format("config.itemzoom.jei.only.comment"))
+				.translation("config.itemzoom.jei.only")
+				.define("jei.only", false);
+
+		showHelpText = builder
+				.comment(I18n.format("config.itemzoom.show.help.text.comment"))
+				.translation("config.itemzoom.show.help.text")
+				.define("show.help.text", true);
+
+		showDamageBar = builder
+				.comment(I18n.format("config.itemzoom.show.damage.bar.comment"))
+				.translation("config.itemzoom.show.damage.bar")
+				.define("show.damage.bar", false);
+
+		showStackSize = builder
+				.comment(I18n.format("config.itemzoom.show.stack.size.comment"))
+				.translation("config.itemzoom.show.stack.size")
+				.define("show.stack.size", false);
+
+		configSpec = builder.build();
 	}
 
-	public static String getCategory() {
-		return category;
+	public boolean isToggledEnabled() {
+		return toggledEnabled.get();
 	}
 
-	public static boolean isToggledEnabled() {
-		return toggledEnabled;
+	public void toggleEnabled() {
+		// TODO when forge config supports changing config values at runtime
+//		toggledEnabled = !toggledEnabled;
+//		if (config != null) {
+//			String configComment = I18n.format("config.itemzoom.toggle.enabled");
+//			Property property = config.get(category, "toggled.enabled", true, configComment);
+//			property.set(toggledEnabled);
+//			if (config.hasChanged()) {
+//				config.save();
+//			}
+//		}
 	}
 
-	public static void toggleEnabled() {
-		toggledEnabled = !toggledEnabled;
-		if (config != null) {
-			String configComment = I18n.format("config.itemzoom.toggle.enabled");
-			Property property = config.get(category, "toggled.enabled", true, configComment);
-			property.set(toggledEnabled);
-			if (config.hasChanged()) {
-				config.save();
-			}
-		}
-	}
-
-	public static void increaseZoom() {
+	public void increaseZoom() {
 		int newZoomAmount = Math.round(getZoomAmount() * 1.1f);
 		setZoomAmount(newZoomAmount);
 	}
 
-	public static void decreaseZoom() {
+	public void decreaseZoom() {
 		int newZoomAmount = Math.round(getZoomAmount() / 1.1f);
 		setZoomAmount(newZoomAmount);
 	}
 
-	public static int getZoomAmount() {
-		return zoomAmount;
+	public int getZoomAmount() {
+		return zoomAmount.get();
 	}
 
-	public static boolean showHelpText() {
-		return showHelpText;
+	public boolean showHelpText() {
+		return showHelpText.get();
 	}
 
-	public static boolean showDamageBar() {
-		return showDamageBar;
+	public boolean showDamageBar() {
+		return showDamageBar.get();
 	}
 
-	public static boolean showStackSize() {
-		return showStackSize;
+	public boolean showStackSize() {
+		return showStackSize.get();
 	}
 
-	public static void setZoomAmount(int zoomAmount) {
-		if (zoomAmount > MAX_ZOOM) {
-			zoomAmount = MAX_ZOOM;
-		} else if (zoomAmount < MIN_ZOOM) {
-			zoomAmount = MIN_ZOOM;
-		}
-
-		if (Config.zoomAmount != zoomAmount) {
-			Config.zoomAmount = zoomAmount;
-			if (config != null) {
-				String configComment = I18n.format("config.itemzoom.zoom.amount");
-				configComment = configComment + " [range: " + MIN_ZOOM + " ~ " + MAX_ZOOM + ", default: " + DEFAULT_ZOOM + "]";
-				Property property = config.get(category, "zoom.amount", DEFAULT_ZOOM, configComment, MIN_ZOOM, MAX_ZOOM);
-				property.set(Config.zoomAmount);
-				if (config.hasChanged()) {
-					config.save();
-				}
-			}
-		}
+	public void setZoomAmount(int zoomAmount) {
+		// TODO when forge config supports changing config values at runtime
+//		if (zoomAmount > MAX_ZOOM) {
+//			zoomAmount = MAX_ZOOM;
+//		} else if (zoomAmount < MIN_ZOOM) {
+//			zoomAmount = MIN_ZOOM;
+//		}
+//
+//		if (this.zoomAmount != zoomAmount) {
+//			this.zoomAmount = zoomAmount;
+//			if (config != null) {
+//				String configComment = I18n.format("config.itemzoom.zoom.amount");
+//				configComment = configComment + " [range: " + MIN_ZOOM + " ~ " + MAX_ZOOM + ", default: " + DEFAULT_ZOOM + "]";
+//				Property property = config.get(category, "zoom.amount", DEFAULT_ZOOM, configComment, MIN_ZOOM, MAX_ZOOM);
+//				property.set(Config.zoomAmount);
+//				if (config.hasChanged()) {
+//					config.save();
+//				}
+//			}
+//		}
 	}
 
-	public static boolean isJeiOnly() {
-		return jeiOnly && JeiCompat.isLoaded();
+	public boolean isJeiOnly() {
+		return jeiOnly.get() && JeiCompat.isLoaded();
 	}
 
-	public static void preInit(FMLPreInitializationEvent event) {
-		File configFile = new File(event.getModConfigurationDirectory(), ItemZoom.MOD_ID + ".cfg");
-		config = new Configuration(configFile, "1.0");
-		load();
-	}
-
-	public static void load() {
-		if (config == null) {
-			return;
-		}
-
-		String configComment = I18n.format("config.itemzoom.toggle.enabled.comment");
-		toggledEnabled = config.getBoolean("toggled.enabled", category, true, configComment, "config.itemzoom.toggle.enabled");
-
-		configComment = I18n.format("config.itemzoom.zoom.amount.comment");
-		zoomAmount = config.getInt("zoom.amount", category, DEFAULT_ZOOM, MIN_ZOOM, MAX_ZOOM, configComment, "config.itemzoom.zoom.amount");
-
-		configComment = I18n.format("config.itemzoom.jei.only.comment");
-		jeiOnly = config.getBoolean("jei.only", category, false, configComment, "config.itemzoom.jei.only");
-
-		configComment = I18n.format("config.itemzoom.show.help.text.comment");
-		showHelpText = config.getBoolean("show.help.text", category, true, configComment, "config.itemzoom.show.help.text");
-
-		configComment = I18n.format("config.itemzoom.show.damage.bar.comment");
-		showDamageBar = config.getBoolean("show.damage.bar", category, false, configComment, "config.itemzoom.show.damage.bar");
-
-		configComment = I18n.format("config.itemzoom.show.stack.size.comment");
-		showStackSize = config.getBoolean("show.stack.size", category, false, configComment, "config.itemzoom.show.stack.size");
-
-		if (config.hasChanged()) {
-			config.save();
-		}
+	public ForgeConfigSpec getConfigSpec() {
+		return configSpec;
 	}
 }

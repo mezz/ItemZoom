@@ -1,17 +1,17 @@
 buildscript {
     repositories {
+        maven { url = "https://files.minecraftforge.net/maven" }
         jcenter()
-        maven { url = "http://files.minecraftforge.net/maven" }
     }
     dependencies {
-        classpath 'net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT'
+        classpath group: "net.minecraftforge.gradle", name: "ForgeGradle", version: "3.+", changing: true
     }
 }
-apply plugin: 'net.minecraftforge.gradle.forge'
+apply plugin: "net.minecraftforge.gradle"
 
-version = version_major + '.' + version_minor
+version = "${version_major}.${version_minor}.${version_patch}"
 group = "mezz.itemzoom" // http://maven.apache.org/guides/mini/guide-naming-conventions.html
-archivesBaseName = "itemzoom_" + mcversion
+archivesBaseName = "itemzoom-" + mcversion
 
 sourceCompatibility = targetCompatibility = JavaVersion.VERSION_1_8 // Need this here so eclipse task generates correctly.
 compileJava {
@@ -19,39 +19,34 @@ compileJava {
 }
 
 minecraft {
-    version = mcversion + "-" + forgeversion
-    runDir = "run"
-    replace '@VERSION@', project.version
-    mappings = mcp_mappings
+    mappings channel: "snapshot", version: "${project.mcp_mappings}".toString()
+
+    runs {
+        client = {
+            properties 'forge.logging.console.level': 'debug'
+            workingDirectory project.file('run').canonicalPath
+            source sourceSets.main
+        }
+        server = {
+            properties 'forge.logging.console.level': 'debug'
+            workingDirectory project.file('run').canonicalPath
+            source sourceSets.main
+        }
+    }
 }
 
 repositories {
     maven {
         name = "jei"
-        url "http://dvs1.progwml6.com/files/maven"
+        url "https://dvs1.progwml6.com/files/maven"
     }
 }
 
 dependencies {
-    deobfProvided "mezz.jei:jei_${jei_mcversion}:${jei_version}:api"
-    runtimeOnly "mezz.jei:jei_${jei_mcversion}:${jei_version}"
-}
-
-processResources {
-    // this will ensure that this task is redone when the versions change.
-    inputs.property "version", project.version
-    inputs.property "mcversion", project.minecraft.version
-
-    // replace stuff in mcmod.info, nothing else
-    from(sourceSets.main.resources.srcDirs) {
-        include 'mcmod.info'
-                
-        // replace version and mcversion
-        expand 'version':project.version, 'mcversion':project.minecraft.version
-    }
-        
-    // copy everything else except the mcmod.info
-    from(sourceSets.main.resources.srcDirs) {
-        exclude 'mcmod.info'
-    }
+    minecraft([
+            group  : "${project.forgegroup}",
+            name   : "forge",
+            version: "${project.mcversion}-${project.forgeversion}"
+    ])
+    compileOnly "mezz.jei:jei-${jei_mcversion}:${jei_version}:api"
 }

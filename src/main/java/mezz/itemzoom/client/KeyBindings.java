@@ -2,24 +2,33 @@ package mezz.itemzoom.client;
 
 import mezz.itemzoom.ItemZoom;
 import net.minecraft.client.settings.KeyBinding;
+import net.minecraft.client.util.InputMappings;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.settings.KeyConflictContext;
 import net.minecraftforge.client.settings.KeyModifier;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
-import org.lwjgl.input.Keyboard;
+import org.lwjgl.glfw.GLFW;
 
-@SideOnly(Side.CLIENT)
+@OnlyIn(Dist.CLIENT)
 public class KeyBindings {
-	public static final KeyBinding TOGGLE = new KeyBinding("key.itemzoom.toggle", KeyConflictContext.GUI, KeyModifier.SHIFT, Keyboard.KEY_Z, ItemZoom.MOD_NAME);
-	public static final KeyBinding HOLD = new KeyBinding("key.itemzoom.hold", KeyConflictContext.GUI, KeyModifier.NONE, Keyboard.KEY_NONE, ItemZoom.MOD_NAME);
-	public static final KeyBinding ZOOM_IN = new KeyBinding("key.itemzoom.zoom.in", KeyConflictContext.GUI, KeyModifier.NONE, Keyboard.KEY_NONE, ItemZoom.MOD_NAME);
-	public static final KeyBinding ZOOM_OUT = new KeyBinding("key.itemzoom.zoom.out", KeyConflictContext.GUI, KeyModifier.NONE, Keyboard.KEY_NONE, ItemZoom.MOD_NAME);
+	public final KeyBinding toggle;
+	public final KeyBinding hold;
+	public final KeyBinding zoomIn;
+	public final KeyBinding zoomOut;
 
-	public static void init() {
-		ClientRegistry.registerKeyBinding(TOGGLE);
-		ClientRegistry.registerKeyBinding(HOLD);
-		ClientRegistry.registerKeyBinding(ZOOM_IN);
-		ClientRegistry.registerKeyBinding(ZOOM_OUT);
+	public KeyBindings() {
+		InputMappings.Input zKey = InputMappings.Type.KEYSYM.getOrMakeInput(GLFW.GLFW_KEY_Z);
+		InputMappings.Input none = InputMappings.INPUT_INVALID;
+		String category = ItemZoom.MOD_NAME;
+		KeyBinding[] allBindings = {
+			toggle = new KeyBinding("key.itemzoom.toggle", KeyConflictContext.GUI, KeyModifier.SHIFT, zKey, category),
+			hold = new KeyBinding("key.itemzoom.hold", KeyConflictContext.GUI, KeyModifier.NONE, none, category),
+			zoomIn = new KeyBinding("key.itemzoom.zoom.in", KeyConflictContext.GUI, KeyModifier.NONE, none, category),
+			zoomOut = new KeyBinding("key.itemzoom.zoom.out", KeyConflictContext.GUI, KeyModifier.NONE, none, category)
+		};
+		for (KeyBinding binding : allBindings) {
+			ClientRegistry.registerKeyBinding(binding);
+		}
 	}
 }
