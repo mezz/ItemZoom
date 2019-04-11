@@ -44,25 +44,26 @@ public class ItemZoom {
 	}
 
 	private static void setupInputHandler(InputHandler inputHandler, IEventBus eventBus) {
-		eventBus.addListener(EventPriority.LOW, false, GuiScreenEvent.KeyboardKeyPressedEvent.Post.class, (event) -> {
+		// TODO: make these use Post events once this Forge bug is fixed: https://github.com/MinecraftForge/MinecraftForge/pull/5367
+		eventBus.addListener(EventPriority.LOW, false, GuiScreenEvent.KeyboardKeyPressedEvent.Pre.class, (event) -> {
 			InputMappings.Input input = InputMappings.getInputByCode(event.getKeyCode(), event.getScanCode());
 			if (inputHandler.handleInput(input)) {
 				event.setCanceled(true);
 			}
 		});
-		eventBus.addListener(EventPriority.LOW, false, GuiScreenEvent.KeyboardKeyReleasedEvent.Post.class, (event) -> {
+		eventBus.addListener(EventPriority.LOW, false, GuiScreenEvent.KeyboardKeyReleasedEvent.Pre.class, (event) -> {
 			InputMappings.Input input = InputMappings.getInputByCode(event.getKeyCode(), event.getScanCode());
 			if (inputHandler.handleInputReleased(input)) {
 				event.setCanceled(true);
 			}
 		});
-		eventBus.addListener(EventPriority.LOW, false, GuiScreenEvent.MouseClickedEvent.Post.class, (event) -> {
+		eventBus.addListener(EventPriority.LOW, false, GuiScreenEvent.MouseClickedEvent.Pre.class, (event) -> {
 			InputMappings.Input input = InputMappings.Type.MOUSE.getOrMakeInput(event.getButton());
 			if (inputHandler.handleInput(input)) {
 				event.setCanceled(true);
 			}
 		});
-		eventBus.addListener(EventPriority.LOW, false, GuiScreenEvent.MouseReleasedEvent.Post.class, (event) -> {
+		eventBus.addListener(EventPriority.LOW, false, GuiScreenEvent.MouseReleasedEvent.Pre.class, (event) -> {
 			InputMappings.Input input = InputMappings.Type.MOUSE.getOrMakeInput(event.getButton());
 			if (inputHandler.handleInputReleased(input)) {
 				event.setCanceled(true);

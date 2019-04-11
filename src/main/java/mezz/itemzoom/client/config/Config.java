@@ -13,7 +13,8 @@ public class Config {
 	private static final int MAX_ZOOM = 100;
 	private static final int DEFAULT_ZOOM = 80;
 
-	private final ConfigValue<Boolean> toggledEnabled;
+	private boolean toggledEnabled = true;
+//	private final ConfigValue<Boolean> toggledEnabled;
 	private final ConfigValue<Integer> zoomAmount;
 	private final ConfigValue<Boolean> jeiOnly;
 	private final ConfigValue<Boolean> showHelpText;
@@ -25,10 +26,11 @@ public class Config {
 		ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder();
 		builder.push("itemzoom");
 
-		toggledEnabled = builder
-				.comment(I18n.format("config.itemzoom.toggle.enabled.comment"))
-				.translation("config.itemzoom.toggle.enabled")
-				.define("toggled.enabled", true);
+		// TODO when forge config supports changing config values at runtime
+//		toggledEnabled = builder
+//				.comment(I18n.format("config.itemzoom.toggle.enabled.comment"))
+//				.translation("config.itemzoom.toggle.enabled")
+//				.define("toggled.enabled", true);
 
 		zoomAmount = builder
 				.comment(I18n.format("config.itemzoom.zoom.amount.comment"))
@@ -59,12 +61,13 @@ public class Config {
 	}
 
 	public boolean isToggledEnabled() {
-		return toggledEnabled.get();
+		return toggledEnabled;
+//		return toggledEnabled.get();
 	}
 
 	public void toggleEnabled() {
+		toggledEnabled = !toggledEnabled;
 		// TODO when forge config supports changing config values at runtime
-//		toggledEnabled = !toggledEnabled;
 //		if (config != null) {
 //			String configComment = I18n.format("config.itemzoom.toggle.enabled");
 //			Property property = config.get(category, "toggled.enabled", true, configComment);
@@ -75,15 +78,17 @@ public class Config {
 //		}
 	}
 
-	public void increaseZoom() {
-		int newZoomAmount = Math.round(getZoomAmount() * 1.1f);
-		setZoomAmount(newZoomAmount);
-	}
+	// TODO when forge config supports changing config values at runtime
+//	public void increaseZoom() {
+//		int newZoomAmount = Math.round(getZoomAmount() * 1.1f);
+//		setZoomAmount(newZoomAmount);
+//	}
 
-	public void decreaseZoom() {
-		int newZoomAmount = Math.round(getZoomAmount() / 1.1f);
-		setZoomAmount(newZoomAmount);
-	}
+	// TODO when forge config supports changing config values at runtime
+//	public void decreaseZoom() {
+//		int newZoomAmount = Math.round(getZoomAmount() / 1.1f);
+//		setZoomAmount(newZoomAmount);
+//	}
 
 	public int getZoomAmount() {
 		return zoomAmount.get();
@@ -101,8 +106,8 @@ public class Config {
 		return showStackSize.get();
 	}
 
-	public void setZoomAmount(int zoomAmount) {
-		// TODO when forge config supports changing config values at runtime
+	// TODO when forge config supports changing config values at runtime
+//	public void setZoomAmount(int zoomAmount) {
 //		if (zoomAmount > MAX_ZOOM) {
 //			zoomAmount = MAX_ZOOM;
 //		} else if (zoomAmount < MIN_ZOOM) {
@@ -121,7 +126,7 @@ public class Config {
 //				}
 //			}
 //		}
-	}
+//	}
 
 	public boolean isJeiOnly() {
 		return jeiOnly.get() && JeiCompat.isLoaded();

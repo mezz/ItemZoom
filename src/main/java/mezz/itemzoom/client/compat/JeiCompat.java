@@ -9,13 +9,11 @@ public class JeiCompat {
 	public static Optional<IIngredientListOverlay> ingredientListOverlay = Optional.empty();
 
 	public static ItemStack getStackUnderMouse() {
-		if (ingredientListOverlay.isPresent()) {
-			Object ingredientUnderMouse = ingredientListOverlay.get().getIngredientUnderMouse();
-			if (ingredientUnderMouse instanceof ItemStack) {
-				return (ItemStack) ingredientUnderMouse;
-			}
-		}
-		return ItemStack.EMPTY;
+		return ingredientListOverlay
+				.map(IIngredientListOverlay::getIngredientUnderMouse)
+				.filter(ingredient -> ingredient instanceof ItemStack)
+				.map(ingredient -> (ItemStack) ingredient)
+				.orElse(ItemStack.EMPTY);
 	}
 
 	public static boolean isLoaded() {

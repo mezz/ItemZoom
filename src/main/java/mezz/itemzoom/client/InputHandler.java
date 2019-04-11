@@ -20,12 +20,13 @@ public class InputHandler {
 		if (keyBindings.toggle.isActiveAndMatches(input)) {
 			config.toggleEnabled();
 			return true;
-		} else if (keyBindings.zoomIn.isActiveAndMatches(input)) {
-			config.increaseZoom();
-			return true;
-		} else if (keyBindings.zoomOut.isActiveAndMatches(input)) {
-			config.decreaseZoom();
-			return true;
+		// TODO when forge config supports changing config values at runtime
+//		} else if (keyBindings.zoomIn.isActiveAndMatches(input)) {
+//			config.increaseZoom();
+//			return true;
+//		} else if (keyBindings.zoomOut.isActiveAndMatches(input)) {
+//			config.decreaseZoom();
+//			return true;
 		} else if (keyBindings.hold.isActiveAndMatches(input)) {
 			enableKeyHeld = true;
 			return true;
