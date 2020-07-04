@@ -65,7 +65,7 @@ public class RenderHandler {
 	}
 
 	private void renderZoomedStack(ItemStack itemStack, ContainerScreen<?> containerScreen, Minecraft minecraft) {
-		final int scaledHeight = minecraft.mainWindow.getScaledHeight();
+		final int scaledHeight = minecraft.getMainWindow().getScaledHeight();
 		final float scale = config.getZoomAmount() / 100f * containerScreen.getGuiLeft() / 17f; // item is 16 wide, give it some extra space on each side
 		final float xPosition = (containerScreen.getGuiLeft() / scale - 16f) / 2f;
 		final float yPosition = (scaledHeight / scale - 16f) / 2f;
