@@ -36,7 +36,7 @@ public class JeiModPlugin implements IModPlugin {
 					Screen currentScreen = Minecraft.getInstance().currentScreen;
 					if (currentScreen instanceof ContainerScreen) {
 						ContainerScreen<?> containerScreen = (ContainerScreen<?>) currentScreen;
-						return Collections.singleton(new Rectangle2d(0, 0, containerScreen.getGuiLeft(), containerScreen.height));
+						return Collections.singleton(new Rectangle2d(0, 0, containerScreen.getGuiLeft(), containerScreen.field_230709_l_));
 					}
 				}
 				return Collections.emptySet();

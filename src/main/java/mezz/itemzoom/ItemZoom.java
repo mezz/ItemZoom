@@ -76,7 +76,7 @@ public class ItemZoom {
 			renderHandler.onScreenDrawn();
 		});
 		eventBus.addListener(EventPriority.NORMAL, false, RenderTooltipEvent.Pre.class, (event) -> {
-			renderHandler.onItemStackTooltip(event.getStack(), event.getX());
+			renderHandler.onItemStackTooltip(event.getStack(), event.getX(), event.getMatrixStack());
 		});
 	}
 }

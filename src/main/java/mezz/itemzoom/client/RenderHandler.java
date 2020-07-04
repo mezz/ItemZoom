@@ -3,6 +3,7 @@ package mezz.itemzoom.client;
 import javax.annotation.Nullable;
 import java.util.function.Supplier;
 
+import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.platform.GlStateManager;
 import mezz.itemzoom.ItemZoom;
 import mezz.itemzoom.client.compat.JeiCompat;
@@ -42,7 +43,7 @@ public class RenderHandler {
 		renderedThisFrame = false;
 	}
 
-	public void onItemStackTooltip(@Nullable ItemStack itemStack, int x) {
+	public void onItemStackTooltip(@Nullable ItemStack itemStack, int x, MatrixStack matrixStack) {
 		if (!config.isToggledEnabled() && !isEnableKeyHeld.get()) {
 			return;
 		}
@@ -58,13 +59,13 @@ public class RenderHandler {
 		if (currentScreen instanceof ContainerScreen) {
 			ContainerScreen<?> containerScreen = (ContainerScreen<?>) currentScreen;
 			if (x > containerScreen.getGuiLeft()) { // avoid rendering items in the same space as the item
-				renderZoomedStack(itemStack, containerScreen, minecraft);
+				renderZoomedStack(itemStack, containerScreen, minecraft, matrixStack);
 				renderedThisFrame = true;
 			}
 		}
 	}
 
-	private void renderZoomedStack(ItemStack itemStack, ContainerScreen<?> containerScreen, Minecraft minecraft) {
+	private void renderZoomedStack(ItemStack itemStack, ContainerScreen<?> containerScreen, Minecraft minecraft, MatrixStack matrixStack) {
 		final int scaledHeight = minecraft.getMainWindow().getScaledHeight();
 		final float scale = config.getZoomAmount() / 100f * containerScreen.getGuiLeft() / 17f; // item is 16 wide, give it some extra space on each side
 		final float xPosition = (containerScreen.getGuiLeft() / scale - 16f) / 2f;
@@ -78,7 +79,7 @@ public class RenderHandler {
 
 		minecraft.getItemRenderer().zLevel += 100;
 		minecraft.getItemRenderer().renderItemAndEffectIntoGUI(minecraft.player, itemStack, 0, 0);
-		renderItemOverlayIntoGUI(font, itemStack);
+		renderItemOverlayIntoGUI(font, itemStack, matrixStack);
 		minecraft.getItemRenderer().zLevel -= 100;
 		GlStateManager.disableBlend();
 		RenderHelper.disableStandardItemLighting();
@@ -90,14 +91,14 @@ public class RenderHandler {
 			int stringWidth = font.getStringWidth(modName);
 			int x = (containerScreen.getGuiLeft() - stringWidth) / 2;
 			int y = (scaledHeight + Math.round(17 * scale)) / 2;
-			font.drawString(modName, x, y, 4210752);
+			font.func_238421_b_(matrixStack, modName, x, y, 4210752);
 
 			if (config.isToggledEnabled()) {
-				String toggleText = keyBinding.getLocalizedName();
+				String toggleText = keyBinding.func_238171_j_().getString();
 				stringWidth = font.getStringWidth(toggleText);
 				x = (containerScreen.getGuiLeft() - stringWidth) / 2;
 				y += font.FONT_HEIGHT;
-				font.drawString(toggleText, x, y, 4210752);
+				font.func_238421_b_(matrixStack, toggleText, x, y, 4210752);
 			}
 		}
 	}
@@ -110,19 +111,22 @@ public class RenderHandler {
 		return fontRenderer;
 	}
 
-	public void renderItemOverlayIntoGUI(FontRenderer fr, ItemStack stack) {
+	public void renderItemOverlayIntoGUI(FontRenderer fr, ItemStack stack, MatrixStack matrixStack) {
 		if (!stack.isEmpty()) {
 			if (config.showStackSize() && stack.getCount() != 1) {
+				matrixStack.push();
+				matrixStack.translate(0, 0, 500);
 				String s = String.valueOf(stack.getCount());
 				GlStateManager.disableLighting();
 				GlStateManager.disableDepthTest();
 				GlStateManager.disableBlend();
-				fr.drawStringWithShadow(s, (float) (17 - fr.getStringWidth(s)), 9f, 16777215);
+				fr.func_238405_a_(matrixStack, s, (float) (17 - fr.getStringWidth(s)), 9f, 16777215);
 				GlStateManager.enableLighting();
 				GlStateManager.enableDepthTest();
 				// Fixes opaque cooldown overlay a bit lower
 				// TODO: check if enabled blending still screws things up down the line.
 				GlStateManager.enableBlend();
+				matrixStack.pop();
 			}
 
 			if (config.showDamageBar() && stack.getItem().showDurabilityBar(stack)) {

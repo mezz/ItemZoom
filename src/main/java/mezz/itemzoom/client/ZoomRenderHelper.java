@@ -1,7 +1,7 @@
 package mezz.itemzoom.client;
 
 import com.mojang.blaze3d.platform.GlStateManager;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.math.vector.Vector3d;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -12,8 +12,8 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 @SuppressWarnings("deprecation")
 @OnlyIn(Dist.CLIENT)
 public class ZoomRenderHelper {
-	private static final Vec3d LIGHT0_POS = (new Vec3d(0.20000000298023224D, 1.0D, -0.699999988079071D)).normalize();
-	private static final Vec3d LIGHT1_POS = (new Vec3d(-0.20000000298023224D, 1.0D, 0.699999988079071D)).normalize();
+	private static final Vector3d LIGHT0_POS = (new Vector3d(0.20000000298023224D, 1.0D, -0.699999988079071D)).normalize();
+	private static final Vector3d LIGHT1_POS = (new Vector3d(-0.20000000298023224D, 1.0D, 0.699999988079071D)).normalize();
 
 	public static void enableGUIStandardItemLighting(float scale) {
 		GlStateManager.pushMatrix();
