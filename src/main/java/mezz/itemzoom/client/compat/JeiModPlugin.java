@@ -13,8 +13,9 @@ import mezz.jei.api.registration.IGuiHandlerRegistration;
 import mezz.jei.api.runtime.IIngredientListOverlay;
 import mezz.jei.api.runtime.IJeiRuntime;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.client.gui.inventory.GuiContainer;
+
+import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.screen.inventory.ContainerScreen;
 import net.minecraft.client.renderer.Rectangle2d;
 import net.minecraft.util.ResourceLocation;
 
@@ -32,10 +33,10 @@ public class JeiModPlugin implements IModPlugin {
 			@Override
 			public Collection<Rectangle2d> getGuiExtraAreas() {
 				if (RenderHandler.rendering) {
-					GuiScreen currentScreen = Minecraft.getInstance().currentScreen;
-					if (currentScreen instanceof GuiContainer) {
-						GuiContainer guiContainer = (GuiContainer) currentScreen;
-						return Collections.singleton(new Rectangle2d(0, 0, guiContainer.getGuiLeft(), guiContainer.height));
+					Screen currentScreen = Minecraft.getInstance().currentScreen;
+					if (currentScreen instanceof ContainerScreen) {
+						ContainerScreen<?> containerScreen = (ContainerScreen<?>) currentScreen;
+						return Collections.singleton(new Rectangle2d(0, 0, containerScreen.getGuiLeft(), containerScreen.height));
 					}
 				}
 				return Collections.emptySet();

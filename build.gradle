@@ -19,18 +19,26 @@ compileJava {
 }
 
 minecraft {
-    mappings channel: "snapshot", version: "${project.mcp_mappings}".toString()
+    mappings channel: "snapshot", version: project.mcp_mappings
 
     runs {
-        client = {
+        client {
             properties 'forge.logging.console.level': 'debug'
-            workingDirectory project.file('run').canonicalPath
-            source sourceSets.main
+            workingDirectory project.file('run')
+            mods {
+                itemzoom {
+                    source sourceSets.main
+                }
+            }
         }
-        server = {
+        server {
             properties 'forge.logging.console.level': 'debug'
-            workingDirectory project.file('run').canonicalPath
-            source sourceSets.main
+            workingDirectory project.file('run')
+            mods {
+                itemzoom {
+                    source sourceSets.main
+                }
+            }
         }
     }
 }
@@ -48,5 +56,6 @@ dependencies {
             name   : "forge",
             version: "${project.mcversion}-${project.forgeversion}"
     ])
-    compileOnly "mezz.jei:jei-${jei_mcversion}:${jei_version}:api"
+    compileOnly fg.deobf("mezz.jei:jei-${mcversion}:${jei_version}:api")
+    runtimeOnly fg.deobf("mezz.jei:jei-${mcversion}:${jei_version}")
 }

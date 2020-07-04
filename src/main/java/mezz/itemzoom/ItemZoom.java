@@ -15,7 +15,6 @@ import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
-import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 
 @Mod(ItemZoom.MOD_ID)
@@ -24,19 +23,21 @@ public class ItemZoom {
 	public static final String MOD_ID = "itemzoom";
 
 	public ItemZoom() {
+		IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
 		DistExecutor.runWhenOn(Dist.CLIENT, ()->()-> {
 			Config config = new Config();
-			ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, config.getConfigSpec());
 
-			IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
-			modEventBus.addListener(EventPriority.NORMAL, false, FMLClientSetupEvent.class, event -> this.setup(config));
+			modEventBus.addListener(EventPriority.NORMAL, false, ModConfig.Loading.class, configLoadingEvent -> {
+				setup(config);
+			});
+			ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, config.getConfigSpec());
 		});
 	}
 
-	private void setup(Config config) {
+	private static void setup(Config config) {
 		KeyBindings keyBindings = new KeyBindings();
 		InputHandler inputHandler = new InputHandler(config, keyBindings);
-		RenderHandler renderHandler = new RenderHandler(config, inputHandler::isEnableKeyHeld, keyBindings.toggle.func_197978_k());
+		RenderHandler renderHandler = new RenderHandler(config, inputHandler::isEnableKeyHeld, keyBindings.toggle);
 
 		IEventBus eventBus = MinecraftForge.EVENT_BUS;
 		setupInputHandler(inputHandler, eventBus);
@@ -44,14 +45,13 @@ public class ItemZoom {
 	}
 
 	private static void setupInputHandler(InputHandler inputHandler, IEventBus eventBus) {
-		// TODO: make these use Post events once this Forge bug is fixed: https://github.com/MinecraftForge/MinecraftForge/pull/5367
-		eventBus.addListener(EventPriority.LOW, false, GuiScreenEvent.KeyboardKeyPressedEvent.Pre.class, (event) -> {
+		eventBus.addListener(EventPriority.LOW, false, GuiScreenEvent.KeyboardKeyPressedEvent.Post.class, (event) -> {
 			InputMappings.Input input = InputMappings.getInputByCode(event.getKeyCode(), event.getScanCode());
 			if (inputHandler.handleInput(input)) {
 				event.setCanceled(true);
 			}
 		});
-		eventBus.addListener(EventPriority.LOW, false, GuiScreenEvent.KeyboardKeyReleasedEvent.Pre.class, (event) -> {
+		eventBus.addListener(EventPriority.LOW, false, GuiScreenEvent.KeyboardKeyReleasedEvent.Post.class, (event) -> {
 			InputMappings.Input input = InputMappings.getInputByCode(event.getKeyCode(), event.getScanCode());
 			if (inputHandler.handleInputReleased(input)) {
 				event.setCanceled(true);

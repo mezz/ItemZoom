@@ -14,9 +14,8 @@ import org.lwjgl.glfw.GLFW;
 public class KeyBindings {
 	public final KeyBinding toggle;
 	public final KeyBinding hold;
-	// TODO when forge config supports changing config values at runtime
-//	public final KeyBinding zoomIn;
-//	public final KeyBinding zoomOut;
+	public final KeyBinding zoomIn;
+	public final KeyBinding zoomOut;
 
 	public KeyBindings() {
 		InputMappings.Input zKey = InputMappings.Type.KEYSYM.getOrMakeInput(GLFW.GLFW_KEY_Z);
@@ -25,8 +24,8 @@ public class KeyBindings {
 		KeyBinding[] allBindings = {
 			toggle = new KeyBinding("key.itemzoom.toggle", KeyConflictContext.GUI, KeyModifier.SHIFT, zKey, category),
 			hold = new KeyBinding("key.itemzoom.hold", KeyConflictContext.GUI, KeyModifier.NONE, none, category),
-//			zoomIn = new KeyBinding("key.itemzoom.zoom.in", KeyConflictContext.GUI, KeyModifier.NONE, none, category),
-//			zoomOut = new KeyBinding("key.itemzoom.zoom.out", KeyConflictContext.GUI, KeyModifier.NONE, none, category)
+			zoomIn = new KeyBinding("key.itemzoom.zoom.in", KeyConflictContext.GUI, KeyModifier.NONE, none, category),
+			zoomOut = new KeyBinding("key.itemzoom.zoom.out", KeyConflictContext.GUI, KeyModifier.NONE, none, category)
 		};
 		for (KeyBinding binding : allBindings) {
 			ClientRegistry.registerKeyBinding(binding);

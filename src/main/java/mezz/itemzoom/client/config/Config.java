@@ -1,7 +1,6 @@
 package mezz.itemzoom.client.config;
 
 import mezz.itemzoom.client.compat.JeiCompat;
-import net.minecraft.client.resources.I18n;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec;
@@ -13,47 +12,45 @@ public class Config {
 	private static final int MAX_ZOOM = 100;
 	private static final int DEFAULT_ZOOM = 80;
 
-	private boolean toggledEnabled = true;
-//	private final ConfigValue<Boolean> toggledEnabled;
+	private final ConfigValue<Boolean> toggledEnabled;
 	private final ConfigValue<Integer> zoomAmount;
 	private final ConfigValue<Boolean> jeiOnly;
 	private final ConfigValue<Boolean> showHelpText;
 	private final ConfigValue<Boolean> showDamageBar;
 	private final ConfigValue<Boolean> showStackSize;
-	private ForgeConfigSpec configSpec;
+	private final ForgeConfigSpec configSpec;
 
 	public Config() {
 		ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder();
 		builder.push("itemzoom");
 
-		// TODO when forge config supports changing config values at runtime
-//		toggledEnabled = builder
-//				.comment(I18n.format("config.itemzoom.toggle.enabled.comment"))
-//				.translation("config.itemzoom.toggle.enabled")
-//				.define("toggled.enabled", true);
+		toggledEnabled = builder
+				.comment("If set to \"false\", Item Zoom will be disabled.")
+				.translation("config.itemzoom.toggle.enabled")
+				.define("toggled.enabled", true);
 
 		zoomAmount = builder
-				.comment(I18n.format("config.itemzoom.zoom.amount.comment"))
+				.comment("Set lower amount to make the item zoom less.")
 				.translation("config.itemzoom.zoom.amount")
 				.defineInRange("zoom.amount", DEFAULT_ZOOM, MIN_ZOOM, MAX_ZOOM, Integer.class);
 
 		jeiOnly = builder
-				.comment(I18n.format("config.itemzoom.jei.only.comment"))
+				.comment("Zoom items only from the JEI overlay with ingredients list.")
 				.translation("config.itemzoom.jei.only")
 				.define("jei.only", false);
 
 		showHelpText = builder
-				.comment(I18n.format("config.itemzoom.show.help.text.comment"))
+				.comment("Display name \"Item Zoom\" and the hotkey to toggle this mod below the zoomed item.")
 				.translation("config.itemzoom.show.help.text")
 				.define("show.help.text", true);
 
 		showDamageBar = builder
-				.comment(I18n.format("config.itemzoom.show.damage.bar.comment"))
+				.comment("Display the item's durability bar when zoomed.")
 				.translation("config.itemzoom.show.damage.bar")
 				.define("show.damage.bar", false);
 
 		showStackSize = builder
-				.comment(I18n.format("config.itemzoom.show.stack.size.comment"))
+				.comment("Display the item's stack size when zoomed.")
 				.translation("config.itemzoom.show.stack.size")
 				.define("show.stack.size", false);
 
@@ -61,34 +58,23 @@ public class Config {
 	}
 
 	public boolean isToggledEnabled() {
-		return toggledEnabled;
-//		return toggledEnabled.get();
+		return toggledEnabled.get();
 	}
 
 	public void toggleEnabled() {
-		toggledEnabled = !toggledEnabled;
-		// TODO when forge config supports changing config values at runtime
-//		if (config != null) {
-//			String configComment = I18n.format("config.itemzoom.toggle.enabled");
-//			Property property = config.get(category, "toggled.enabled", true, configComment);
-//			property.set(toggledEnabled);
-//			if (config.hasChanged()) {
-//				config.save();
-//			}
-//		}
+		toggledEnabled.set(!toggledEnabled.get());
+		toggledEnabled.save();
 	}
 
-	// TODO when forge config supports changing config values at runtime
-//	public void increaseZoom() {
-//		int newZoomAmount = Math.round(getZoomAmount() * 1.1f);
-//		setZoomAmount(newZoomAmount);
-//	}
+	public void increaseZoom() {
+		int newZoomAmount = Math.round(getZoomAmount() * 1.1f);
+		setZoomAmount(newZoomAmount);
+	}
 
-	// TODO when forge config supports changing config values at runtime
-//	public void decreaseZoom() {
-//		int newZoomAmount = Math.round(getZoomAmount() / 1.1f);
-//		setZoomAmount(newZoomAmount);
-//	}
+	public void decreaseZoom() {
+		int newZoomAmount = Math.round(getZoomAmount() / 1.1f);
+		setZoomAmount(newZoomAmount);
+	}
 
 	public int getZoomAmount() {
 		return zoomAmount.get();
@@ -106,27 +92,19 @@ public class Config {
 		return showStackSize.get();
 	}
 
-	// TODO when forge config supports changing config values at runtime
-//	public void setZoomAmount(int zoomAmount) {
-//		if (zoomAmount > MAX_ZOOM) {
-//			zoomAmount = MAX_ZOOM;
-//		} else if (zoomAmount < MIN_ZOOM) {
-//			zoomAmount = MIN_ZOOM;
-//		}
-//
-//		if (this.zoomAmount != zoomAmount) {
-//			this.zoomAmount = zoomAmount;
-//			if (config != null) {
-//				String configComment = I18n.format("config.itemzoom.zoom.amount");
-//				configComment = configComment + " [range: " + MIN_ZOOM + " ~ " + MAX_ZOOM + ", default: " + DEFAULT_ZOOM + "]";
-//				Property property = config.get(category, "zoom.amount", DEFAULT_ZOOM, configComment, MIN_ZOOM, MAX_ZOOM);
-//				property.set(Config.zoomAmount);
-//				if (config.hasChanged()) {
-//					config.save();
-//				}
-//			}
-//		}
-//	}
+	public void setZoomAmount(int zoomAmount) {
+		if (zoomAmount > MAX_ZOOM) {
+			zoomAmount = MAX_ZOOM;
+		} else if (zoomAmount < MIN_ZOOM) {
+			zoomAmount = MIN_ZOOM;
+		}
+
+		int oldZoomAmount = this.zoomAmount.get();
+		if (oldZoomAmount != zoomAmount) {
+			this.zoomAmount.set(zoomAmount);
+			this.zoomAmount.save();
+		}
+	}
 
 	public boolean isJeiOnly() {
 		return jeiOnly.get() && JeiCompat.isLoaded();

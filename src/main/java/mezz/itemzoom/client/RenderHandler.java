@@ -1,20 +1,23 @@
 package mezz.itemzoom.client;
 
+import javax.annotation.Nullable;
 import java.util.function.Supplier;
 
+import com.mojang.blaze3d.platform.GlStateManager;
 import mezz.itemzoom.ItemZoom;
 import mezz.itemzoom.client.compat.JeiCompat;
 import mezz.itemzoom.client.config.Config;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.entity.EntityPlayerSP;
+import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.client.gui.inventory.GuiContainer;
+
+import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.screen.inventory.ContainerScreen;
 import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
+import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.math.MathHelper;
 import net.minecraftforge.api.distmarker.Dist;
@@ -26,12 +29,12 @@ public class RenderHandler {
 	private static boolean renderedThisFrame = false;
 	private final Config config;
 	private final Supplier<Boolean> isEnableKeyHeld;
-	private final String toggleText;
+	private final KeyBinding keyBinding;
 
-	public RenderHandler(Config config, Supplier<Boolean> isEnableKeyHeld, String toggleText) {
+	public RenderHandler(Config config, Supplier<Boolean> isEnableKeyHeld, KeyBinding keyBinding) {
 		this.config = config;
 		this.isEnableKeyHeld = isEnableKeyHeld;
-		this.toggleText = toggleText;
+		this.keyBinding = keyBinding;
 	}
 
 	public void onScreenDrawn() {
@@ -39,11 +42,10 @@ public class RenderHandler {
 		renderedThisFrame = false;
 	}
 
-	public void onItemStackTooltip(ItemStack itemStack, int x) {
+	public void onItemStackTooltip(@Nullable ItemStack itemStack, int x) {
 		if (!config.isToggledEnabled() && !isEnableKeyHeld.get()) {
 			return;
 		}
-		//noinspection ConstantConditions
 		if (itemStack == null || itemStack.isEmpty()) {
 			return;
 		}
@@ -52,20 +54,20 @@ public class RenderHandler {
 		}
 
 		Minecraft minecraft = Minecraft.getInstance();
-		GuiScreen currentScreen = minecraft.currentScreen;
-		if (currentScreen instanceof GuiContainer) {
-			GuiContainer guiContainer = (GuiContainer) currentScreen;
-			if (x > guiContainer.getGuiLeft()) { // avoid rendering items in the same space as the item
-				renderZoomedStack(itemStack, guiContainer, minecraft);
+		Screen currentScreen = minecraft.currentScreen;
+		if (currentScreen instanceof ContainerScreen) {
+			ContainerScreen<?> containerScreen = (ContainerScreen<?>) currentScreen;
+			if (x > containerScreen.getGuiLeft()) { // avoid rendering items in the same space as the item
+				renderZoomedStack(itemStack, containerScreen, minecraft);
 				renderedThisFrame = true;
 			}
 		}
 	}
 
-	private void renderZoomedStack(ItemStack itemStack, GuiContainer guiContainer, Minecraft minecraft) {
+	private void renderZoomedStack(ItemStack itemStack, ContainerScreen<?> containerScreen, Minecraft minecraft) {
 		final int scaledHeight = minecraft.mainWindow.getScaledHeight();
-		final float scale = config.getZoomAmount() / 100f * guiContainer.getGuiLeft() / 17f; // item is 16 wide, give it some extra space on each side
-		final float xPosition = (guiContainer.getGuiLeft() / scale - 16f) / 2f;
+		final float scale = config.getZoomAmount() / 100f * containerScreen.getGuiLeft() / 17f; // item is 16 wide, give it some extra space on each side
+		final float xPosition = (containerScreen.getGuiLeft() / scale - 16f) / 2f;
 		final float yPosition = (scaledHeight / scale - 16f) / 2f;
 		FontRenderer font = getFontRenderer(minecraft, itemStack);
 
@@ -86,13 +88,14 @@ public class RenderHandler {
 		if (config.showHelpText()) {
 			String modName = ItemZoom.MOD_NAME;
 			int stringWidth = font.getStringWidth(modName);
-			int x = (guiContainer.getGuiLeft() - stringWidth) / 2;
+			int x = (containerScreen.getGuiLeft() - stringWidth) / 2;
 			int y = (scaledHeight + Math.round(17 * scale)) / 2;
 			font.drawString(modName, x, y, 4210752);
 
 			if (config.isToggledEnabled()) {
+				String toggleText = keyBinding.getLocalizedName();
 				stringWidth = font.getStringWidth(toggleText);
-				x = (guiContainer.getGuiLeft() - stringWidth) / 2;
+				x = (containerScreen.getGuiLeft() - stringWidth) / 2;
 				y += font.FONT_HEIGHT;
 				font.drawString(toggleText, x, y, 4210752);
 			}
@@ -125,7 +128,7 @@ public class RenderHandler {
 			if (config.showDamageBar() && stack.getItem().showDurabilityBar(stack)) {
 				GlStateManager.disableLighting();
 				GlStateManager.disableDepthTest();
-				GlStateManager.disableTexture2D();
+				GlStateManager.disableTexture();
 				GlStateManager.disableAlphaTest();
 				GlStateManager.disableBlend();
 				Tessellator tessellator = Tessellator.getInstance();
@@ -137,22 +140,22 @@ public class RenderHandler {
 				draw(bufferBuilder, 2, 13, i, 1, rgbfordisplay >> 16 & 255, rgbfordisplay >> 8 & 255, rgbfordisplay & 255, 255);
 				GlStateManager.enableBlend();
 				GlStateManager.enableAlphaTest();
-				GlStateManager.enableTexture2D();
+				GlStateManager.enableTexture();
 				GlStateManager.enableLighting();
 				GlStateManager.enableDepthTest();
 			}
 
-			EntityPlayerSP entityplayersp = Minecraft.getInstance().player;
+			ClientPlayerEntity entityplayersp = Minecraft.getInstance().player;
 			float f3 = entityplayersp == null ? 0.0F : entityplayersp.getCooldownTracker().getCooldown(stack.getItem(), Minecraft.getInstance().getRenderPartialTicks());
 
 			if (f3 > 0.0F) {
 				GlStateManager.disableLighting();
 				GlStateManager.disableDepthTest();
-				GlStateManager.disableTexture2D();
+				GlStateManager.disableTexture();
 				Tessellator tessellator = Tessellator.getInstance();
 				BufferBuilder bufferBuilder = tessellator.getBuffer();
 				draw(bufferBuilder, 0, MathHelper.floor(16.0F * (1.0F - f3)), 16, MathHelper.ceil(16.0F * f3), 255, 255, 255, 127);
-				GlStateManager.enableTexture2D();
+				GlStateManager.enableTexture();
 				GlStateManager.enableLighting();
 				GlStateManager.enableDepthTest();
 			}
@@ -161,10 +164,10 @@ public class RenderHandler {
 
 	private static void draw(BufferBuilder renderer, int x, int y, int width, int height, int red, int green, int blue, int alpha) {
 		renderer.begin(7, DefaultVertexFormats.POSITION_COLOR);
-		renderer.pos((double) (x), (double) (y), 0.0D).color(red, green, blue, alpha).endVertex();
-		renderer.pos((double) (x), (double) (y + height), 0.0D).color(red, green, blue, alpha).endVertex();
-		renderer.pos((double) (x + width), (double) (y + height), 0.0D).color(red, green, blue, alpha).endVertex();
-		renderer.pos((double) (x + width), (double) (y), 0.0D).color(red, green, blue, alpha).endVertex();
+		renderer.pos(x, y, 0.0D).color(red, green, blue, alpha).endVertex();
+		renderer.pos(x, y + height, 0.0D).color(red, green, blue, alpha).endVertex();
+		renderer.pos(x + width, y + height, 0.0D).color(red, green, blue, alpha).endVertex();
+		renderer.pos(x + width, y, 0.0D).color(red, green, blue, alpha).endVertex();
 		Tessellator.getInstance().draw();
 	}
 
