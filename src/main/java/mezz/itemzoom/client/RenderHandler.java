@@ -65,6 +65,7 @@ public class RenderHandler {
 		}
 	}
 
+	@SuppressWarnings("deprecation")
 	private void renderZoomedStack(ItemStack itemStack, ContainerScreen<?> containerScreen, Minecraft minecraft, MatrixStack matrixStack) {
 		final int scaledHeight = minecraft.getMainWindow().getScaledHeight();
 		final float scale = config.getZoomAmount() / 100f * containerScreen.getGuiLeft() / 17f; // item is 16 wide, give it some extra space on each side
@@ -111,6 +112,7 @@ public class RenderHandler {
 		return fontRenderer;
 	}
 
+	@SuppressWarnings("deprecation")
 	public void renderItemOverlayIntoGUI(FontRenderer fr, ItemStack stack, MatrixStack matrixStack) {
 		if (!stack.isEmpty()) {
 			if (config.showStackSize() && stack.getCount() != 1) {
