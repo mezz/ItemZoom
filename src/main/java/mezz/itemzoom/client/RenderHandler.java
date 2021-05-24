@@ -78,10 +78,10 @@ public class RenderHandler {
 		GlStateManager.translatef(xPosition, yPosition, 0);
 		ZoomRenderHelper.enableGUIStandardItemLighting(scale);
 
-		minecraft.getItemRenderer().zLevel += 100;
+		minecraft.getItemRenderer().zLevel += config.getZLevel();
 		minecraft.getItemRenderer().renderItemAndEffectIntoGUI(minecraft.player, itemStack, 0, 0);
 		renderItemOverlayIntoGUI(font, itemStack, matrixStack);
-		minecraft.getItemRenderer().zLevel -= 100;
+		minecraft.getItemRenderer().zLevel -= config.getZLevel();
 		GlStateManager.disableBlend();
 		RenderHelper.disableStandardItemLighting();
 
