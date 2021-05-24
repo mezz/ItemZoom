@@ -12,12 +12,18 @@ public class Config {
 	private static final int MAX_ZOOM = 100;
 	private static final int DEFAULT_ZOOM = 80;
 
+	private static final int MIN_Z_LEVEL = 0;
+	private static final int MAX_Z_LEVEL = 10000;
+	private static final int DEFAULT_Z_LEVEL = 100;
+
+
 	private final ConfigValue<Boolean> toggledEnabled;
 	private final ConfigValue<Integer> zoomAmount;
 	private final ConfigValue<Boolean> jeiOnly;
 	private final ConfigValue<Boolean> showHelpText;
 	private final ConfigValue<Boolean> showDamageBar;
 	private final ConfigValue<Boolean> showStackSize;
+	private final ConfigValue<Integer> zLevel;
 	private final ForgeConfigSpec configSpec;
 
 	public Config() {
@@ -54,6 +60,11 @@ public class Config {
 				.translation("config.itemzoom.show.stack.size")
 				.define("show.stack.size", false);
 
+		zLevel = builder
+			.comment("Set higher amount if other UI elements show up on top.")
+			.translation("config.itemzoom.zLevel.value")
+			.defineInRange("zLevel.value", DEFAULT_Z_LEVEL, MIN_Z_LEVEL, MAX_Z_LEVEL, Integer.class);
+
 		configSpec = builder.build();
 	}
 
@@ -78,6 +89,9 @@ public class Config {
 
 	public int getZoomAmount() {
 		return zoomAmount.get();
+	}
+	public int getZLevel() {
+		return zLevel.get();
 	}
 
 	public boolean showHelpText() {
