@@ -1,0 +1,23 @@
+{
+    "_comment": "Atajos del teclado",
+    "key.itemzoom.toggle": "Alternar zum de objeto",
+    "key.itemzoom.hold": "Mantener para mostrar",
+    "key.itemzoom.zoom.in": "Ampliar",
+    "key.itemzoom.zoom.out": "Reducir",
+
+    "_comment": "Configuración",
+    "config.itemzoom.title": "Configuración de %MODNAME",
+
+    "config.itemzoom.toggle.enabled": "Alternar zum de objeto",
+    "config.itemzoom.toggle.enabled.comment": "Si se establece en \"false\", el zum de objetos se desactivará.",
+    "config.itemzoom.zoom.amount": "Cantidad de zum",
+    "config.itemzoom.zoom.amount.comment": "Establece una cantidad menor para que el objeto se amplie menos.",
+    "config.itemzoom.jei.only": "Solo en superposición de JEI",
+    "config.itemzoom.jei.only.comment": "Zoom de objetos solo desde la superposición de JEI con la lista de ingredientes.",
+    "config.itemzoom.show.help.text": "Mostrar texto de ayuda",
+    "config.itemzoom.show.help.text.comment": "Muestra el nombre \"Item Zoom\" y la tecla de acceso para alternar este mod debajo del objeto ampliado.",
+    "config.itemzoom.show.damage.bar": "Mostrar barra de durabilidad",
+    "config.itemzoom.show.damage.bar.comment": "Muestra la barra de durabilidad del objeto cuando se amplía.",
+    "config.itemzoom.show.stack.size": "Mostrar tamaño de pila",
+    "config.itemzoom.show.stack.size.comment": "Muestra el tamaño de la pila del objeto cuando se amplía."
+}
