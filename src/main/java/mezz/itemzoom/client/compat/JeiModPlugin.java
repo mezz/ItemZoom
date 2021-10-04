@@ -4,7 +4,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Optional;
 
-import mezz.itemzoom.ItemZoom;
+import mezz.itemzoom.client.Constants;
 import mezz.itemzoom.client.RenderHandler;
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
@@ -14,29 +14,30 @@ import mezz.jei.api.runtime.IIngredientListOverlay;
 import mezz.jei.api.runtime.IJeiRuntime;
 import net.minecraft.client.Minecraft;
 
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.screen.inventory.ContainerScreen;
-import net.minecraft.client.renderer.Rectangle2d;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.renderer.Rect2i;
+import net.minecraft.resources.ResourceLocation;
 
 @JeiPlugin
 public class JeiModPlugin implements IModPlugin {
 
 	@Override
 	public ResourceLocation getPluginUid() {
-		return new ResourceLocation(ItemZoom.MOD_ID, "plugin");
+		return new ResourceLocation(Constants.MOD_ID, "plugin");
 	}
 
 	@Override
 	public void registerGuiHandlers(IGuiHandlerRegistration registration) {
 		registration.addGlobalGuiHandler(new IGlobalGuiHandler() {
 			@Override
-			public Collection<Rectangle2d> getGuiExtraAreas() {
+			public Collection<Rect2i> getGuiExtraAreas() {
 				if (RenderHandler.rendering) {
-					Screen currentScreen = Minecraft.getInstance().currentScreen;
-					if (currentScreen instanceof ContainerScreen) {
-						ContainerScreen<?> containerScreen = (ContainerScreen<?>) currentScreen;
-						return Collections.singleton(new Rectangle2d(0, 0, containerScreen.getGuiLeft(), containerScreen.field_230709_l_));
+					Minecraft minecraft = Minecraft.getInstance();
+					Screen currentScreen = minecraft.screen;
+					if (currentScreen instanceof AbstractContainerScreen<?> containerScreen) {
+						Rect2i rect = new Rect2i(0, 0, containerScreen.getGuiLeft(), containerScreen.getGuiTop());
+						return Collections.singleton(rect);
 					}
 				}
 				return Collections.emptySet();

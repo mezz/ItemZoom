@@ -19,5 +19,7 @@
     "config.itemzoom.show.damage.bar": "Display Durability Bar",
     "config.itemzoom.show.damage.bar.comment": "Display the item's durability bar when zoomed.",
     "config.itemzoom.show.stack.size": "Display Stack Size",
-    "config.itemzoom.show.stack.size.comment": "Display the item's stack size when zoomed."
+    "config.itemzoom.show.stack.size.comment": "Display the item's stack size when zoomed.",
+    "config.itemzoom.show.stack.size": "Display Cooldown",
+    "config.itemzoom.show.stack.size.comment": "Display the item's cooldown animation when zoomed."
 }

@@ -1,10 +1,10 @@
 package mezz.itemzoom;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import mezz.itemzoom.client.InputHandler;
 import mezz.itemzoom.client.KeyBindings;
 import mezz.itemzoom.client.RenderHandler;
 import mezz.itemzoom.client.config.Config;
-import net.minecraft.client.util.InputMappings;
 import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.client.event.RenderTooltipEvent;
 import net.minecraftforge.common.MinecraftForge;
@@ -12,6 +12,7 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.config.ModConfig;
+import net.minecraftforge.fml.event.config.ModConfigEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 
 public class ItemZoomClient {
@@ -19,7 +20,7 @@ public class ItemZoomClient {
 		Config config = new Config();
 
 		IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
-		modEventBus.addListener(EventPriority.NORMAL, false, ModConfig.Loading.class, configLoadingEvent -> {
+		modEventBus.addListener(EventPriority.NORMAL, false, ModConfigEvent.Loading.class, configLoadingEvent -> {
 			setup(config);
 		});
 		ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, config.getConfigSpec());
@@ -37,25 +38,25 @@ public class ItemZoomClient {
 
 	private static void setupInputHandler(InputHandler inputHandler, IEventBus eventBus) {
 		eventBus.addListener(EventPriority.LOW, false, GuiScreenEvent.KeyboardKeyPressedEvent.Post.class, (event) -> {
-			InputMappings.Input input = InputMappings.getInputByCode(event.getKeyCode(), event.getScanCode());
+			InputConstants.Key input = InputConstants.getKey(event.getKeyCode(), event.getScanCode());
 			if (inputHandler.handleInput(input)) {
 				event.setCanceled(true);
 			}
 		});
 		eventBus.addListener(EventPriority.LOW, false, GuiScreenEvent.KeyboardKeyReleasedEvent.Post.class, (event) -> {
-			InputMappings.Input input = InputMappings.getInputByCode(event.getKeyCode(), event.getScanCode());
+			InputConstants.Key input = InputConstants.getKey(event.getKeyCode(), event.getScanCode());
 			if (inputHandler.handleInputReleased(input)) {
 				event.setCanceled(true);
 			}
 		});
 		eventBus.addListener(EventPriority.LOW, false, GuiScreenEvent.MouseClickedEvent.Pre.class, (event) -> {
-			InputMappings.Input input = InputMappings.Type.MOUSE.getOrMakeInput(event.getButton());
+			InputConstants.Key input = InputConstants.Type.MOUSE.getOrCreate(event.getButton());
 			if (inputHandler.handleInput(input)) {
 				event.setCanceled(true);
 			}
 		});
 		eventBus.addListener(EventPriority.LOW, false, GuiScreenEvent.MouseReleasedEvent.Pre.class, (event) -> {
-			InputMappings.Input input = InputMappings.Type.MOUSE.getOrMakeInput(event.getButton());
+			InputConstants.Key input = InputConstants.Type.MOUSE.getOrCreate(event.getButton());
 			if (inputHandler.handleInputReleased(input)) {
 				event.setCanceled(true);
 			}

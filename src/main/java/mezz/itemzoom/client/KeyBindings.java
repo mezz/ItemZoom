@@ -1,33 +1,29 @@
 package mezz.itemzoom.client;
 
-import mezz.itemzoom.ItemZoom;
-import net.minecraft.client.settings.KeyBinding;
-import net.minecraft.client.util.InputMappings;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import com.mojang.blaze3d.platform.InputConstants;
+import net.minecraft.client.KeyMapping;
 import net.minecraftforge.client.settings.KeyConflictContext;
 import net.minecraftforge.client.settings.KeyModifier;
-import net.minecraftforge.fml.client.registry.ClientRegistry;
+import net.minecraftforge.fmlclient.registry.ClientRegistry;
 import org.lwjgl.glfw.GLFW;
 
-@OnlyIn(Dist.CLIENT)
 public class KeyBindings {
-	public final KeyBinding toggle;
-	public final KeyBinding hold;
-	public final KeyBinding zoomIn;
-	public final KeyBinding zoomOut;
+	public final KeyMapping toggle;
+	public final KeyMapping hold;
+	public final KeyMapping zoomIn;
+	public final KeyMapping zoomOut;
 
 	public KeyBindings() {
-		InputMappings.Input zKey = InputMappings.Type.KEYSYM.getOrMakeInput(GLFW.GLFW_KEY_Z);
-		InputMappings.Input none = InputMappings.INPUT_INVALID;
-		String category = ItemZoom.MOD_NAME;
-		KeyBinding[] allBindings = {
-			toggle = new KeyBinding("key.itemzoom.toggle", KeyConflictContext.GUI, KeyModifier.SHIFT, zKey, category),
-			hold = new KeyBinding("key.itemzoom.hold", KeyConflictContext.GUI, KeyModifier.NONE, none, category),
-			zoomIn = new KeyBinding("key.itemzoom.zoom.in", KeyConflictContext.GUI, KeyModifier.NONE, none, category),
-			zoomOut = new KeyBinding("key.itemzoom.zoom.out", KeyConflictContext.GUI, KeyModifier.NONE, none, category)
+		InputConstants.Key zKey = InputConstants.Type.KEYSYM.getOrCreate(GLFW.GLFW_KEY_Z);
+		InputConstants.Key none = InputConstants.UNKNOWN;
+		String category = Constants.MOD_NAME;
+		KeyMapping[] allBindings = {
+			toggle = new KeyMapping("key.itemzoom.toggle", KeyConflictContext.GUI, KeyModifier.SHIFT, zKey, category),
+			hold = new KeyMapping("key.itemzoom.hold", KeyConflictContext.GUI, KeyModifier.NONE, none, category),
+			zoomIn = new KeyMapping("key.itemzoom.zoom.in", KeyConflictContext.GUI, KeyModifier.NONE, none, category),
+			zoomOut = new KeyMapping("key.itemzoom.zoom.out", KeyConflictContext.GUI, KeyModifier.NONE, none, category)
 		};
-		for (KeyBinding binding : allBindings) {
+		for (KeyMapping binding : allBindings) {
 			ClientRegistry.registerKeyBinding(binding);
 		}
 	}

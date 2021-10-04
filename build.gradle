@@ -1,44 +1,45 @@
 buildscript {
     repositories {
         maven { url = "https://files.minecraftforge.net/maven" }
-        jcenter()
+        mavenCentral()
     }
     dependencies {
-        classpath group: "net.minecraftforge.gradle", name: "ForgeGradle", version: "3.+", changing: true
+        classpath group: "net.minecraftforge.gradle", name: "ForgeGradle", version: '5.1.+', changing: true
     }
+}
+
+plugins {
+    id 'java'
 }
 apply plugin: "net.minecraftforge.gradle"
 
+// these two are required for the java plugin to generate jar files with a version
 version = "${version_major}.${version_minor}.${version_patch}"
 group = "mezz.itemzoom" // http://maven.apache.org/guides/mini/guide-naming-conventions.html
-archivesBaseName = "itemzoom-" + mcversion
 
-sourceCompatibility = targetCompatibility = JavaVersion.VERSION_1_8 // Need this here so eclipse task generates correctly.
-compileJava {
-    sourceCompatibility = targetCompatibility = JavaVersion.VERSION_1_8
-}
+java.toolchain.languageVersion = JavaLanguageVersion.of(16)
 
 minecraft {
-    mappings channel: "snapshot", version: project.mcp_mappings
+    mappings channel: 'official', version: project.minecraft_version
 
     accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
 
     runs {
         client {
-            properties 'forge.logging.console.level': 'debug'
+            property 'forge.logging.console.level', 'debug'
             workingDirectory project.file('run')
             mods {
                 itemzoom {
-                    source sourceSets.main
+                    sources sourceSets.main
                 }
             }
         }
         server {
-            properties 'forge.logging.console.level': 'debug'
+            property 'forge.logging.console.level', 'debug'
             workingDirectory project.file('run')
             mods {
                 itemzoom {
-                    source sourceSets.main
+                    sources sourceSets.main
                 }
             }
         }
@@ -54,22 +55,45 @@ repositories {
 
 dependencies {
     minecraft([
-            group  : "${project.forgegroup}",
+            group  : "${project.forge_group}",
             name   : "forge",
-            version: "${project.mcversion}-${project.forgeversion}"
+            version: "${project.minecraft_version}-${project.forge_version}"
     ])
-    compileOnly fg.deobf("mezz.jei:jei-${mcversion}:${jei_version}:api")
-    runtimeOnly fg.deobf("mezz.jei:jei-${mcversion}:${jei_version}")
+    compileOnly fg.deobf("mezz.jei:jei-${minecraft_version}:${jei_version}:api")
+    runtimeOnly fg.deobf("mezz.jei:jei-${minecraft_version}:${jei_version}")
+}
+
+jar {
+    manifest {
+        attributes([
+                'Specification-Title'     : 'ItemZoom',
+                'Specification-Vendor'    : 'mezz',
+                'Specification-Version'   : "${project.version}",
+                'Implementation-Title'    : project.name,
+                'Implementation-Version'  : "${project.version}",
+                'Implementation-Vendor'   : 'mezz',
+                'Implementation-Timestamp': new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
+                "Automatic-Module-Name": "mezz.itemzoom",
+        ])
+    }
+}
+
+def replaceResources = tasks.register("replaceResources", Copy) {
+    it.outputs.upToDateWhen { false }
+    //Copy it into the build dir
+    it.from(sourceSets.main.resources) {
+        include "META-INF/mods.toml"
+        expand 'version': version, 'mc_version': minecraft_version_range, 'forge_version': forge_version_range, "loader_version": loader_version_range
+    }
+    it.into "$buildDir/resources/main/"
 }
 
 processResources {
-    from(sourceSets.main.resources.srcDirs) {
-        include 'META-INF/mods.toml'
+    duplicatesStrategy(DuplicatesStrategy.FAIL)
+    exclude('META-INF/mods.toml')
+    configure { finalizedBy(replaceResources) }
+}
 
-        expand 'version': version
-    }
-
-    from(sourceSets.main.resources.srcDirs) {
-        exclude 'META-INF/mods.toml'
-    }
+classes.configure {
+    dependsOn(replaceResources)
 }

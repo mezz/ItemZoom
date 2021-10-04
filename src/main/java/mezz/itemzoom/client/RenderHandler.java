@@ -3,26 +3,33 @@ package mezz.itemzoom.client;
 import javax.annotation.Nullable;
 import java.util.function.Supplier;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
-import com.mojang.blaze3d.platform.GlStateManager;
-import mezz.itemzoom.ItemZoom;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.VertexFormat;
 import mezz.itemzoom.client.compat.JeiCompat;
 import mezz.itemzoom.client.config.Config;
+import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.entity.player.ClientPlayerEntity;
-import net.minecraft.client.gui.FontRenderer;
 
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.screen.inventory.ContainerScreen;
-import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.RenderHelper;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.client.settings.KeyBinding;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.entity.ItemRenderer;
+import net.minecraft.network.chat.Component;
+import net.minecraft.util.Mth;
+import net.minecraft.world.item.ItemCooldowns;
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.client.IItemRenderProperties;
+import net.minecraftforge.client.RenderProperties;
 
 @OnlyIn(Dist.CLIENT)
 public class RenderHandler {
@@ -30,12 +37,12 @@ public class RenderHandler {
 	private static boolean renderedThisFrame = false;
 	private final Config config;
 	private final Supplier<Boolean> isEnableKeyHeld;
-	private final KeyBinding keyBinding;
+	private final KeyMapping keyMapping;
 
-	public RenderHandler(Config config, Supplier<Boolean> isEnableKeyHeld, KeyBinding keyBinding) {
+	public RenderHandler(Config config, Supplier<Boolean> isEnableKeyHeld, KeyMapping keyMapping) {
 		this.config = config;
 		this.isEnableKeyHeld = isEnableKeyHeld;
-		this.keyBinding = keyBinding;
+		this.keyMapping = keyMapping;
 	}
 
 	public void onScreenDrawn() {
@@ -43,138 +50,148 @@ public class RenderHandler {
 		renderedThisFrame = false;
 	}
 
-	public void onItemStackTooltip(@Nullable ItemStack itemStack, int x, MatrixStack matrixStack) {
+	public void onItemStackTooltip(@Nullable ItemStack itemStack, int x, PoseStack poseStack) {
 		if (!config.isToggledEnabled() && !isEnableKeyHeld.get()) {
 			return;
 		}
 		if (itemStack == null || itemStack.isEmpty()) {
 			return;
 		}
-		if (config.isJeiOnly() && !ItemStack.areItemStacksEqual(itemStack, JeiCompat.getStackUnderMouse())) {
+		if (config.isJeiOnly() && !ItemStack.isSame(itemStack, JeiCompat.getStackUnderMouse())) {
 			return;
 		}
 
 		Minecraft minecraft = Minecraft.getInstance();
-		Screen currentScreen = minecraft.currentScreen;
-		if (currentScreen instanceof ContainerScreen) {
-			ContainerScreen<?> containerScreen = (ContainerScreen<?>) currentScreen;
+		Screen currentScreen = minecraft.screen;
+		if (currentScreen instanceof AbstractContainerScreen<?> containerScreen) {
 			if (x > containerScreen.getGuiLeft()) { // avoid rendering items in the same space as the item
-				renderZoomedStack(itemStack, containerScreen, minecraft, matrixStack);
+				renderZoomedStack(itemStack, containerScreen, minecraft, poseStack);
 				renderedThisFrame = true;
 			}
 		}
 	}
 
-	@SuppressWarnings("deprecation")
-	private void renderZoomedStack(ItemStack itemStack, ContainerScreen<?> containerScreen, Minecraft minecraft, MatrixStack matrixStack) {
-		final int scaledHeight = minecraft.getMainWindow().getScaledHeight();
+	private void renderZoomedStack(ItemStack itemStack, AbstractContainerScreen<?> containerScreen, Minecraft minecraft, PoseStack poseStack) {
+		final int scaledHeight = minecraft.getWindow().getGuiScaledHeight();
 		final float scale = config.getZoomAmount() / 100f * containerScreen.getGuiLeft() / 17f; // item is 16 wide, give it some extra space on each side
 		final float xPosition = (containerScreen.getGuiLeft() / scale - 16f) / 2f;
 		final float yPosition = (scaledHeight / scale - 16f) / 2f;
-		FontRenderer font = getFontRenderer(minecraft, itemStack);
+		Font font = getFont(minecraft, itemStack);
 
-		GlStateManager.pushMatrix();
-		GlStateManager.scalef(scale, scale, 1);
-		GlStateManager.translatef(xPosition, yPosition, 0);
-		ZoomRenderHelper.enableGUIStandardItemLighting(scale);
+		PoseStack modelPoseStack = RenderSystem.getModelViewStack();
+		modelPoseStack.pushPose();
+		{
+			modelPoseStack.scale(scale, scale, 1);
+			modelPoseStack.translate(xPosition, yPosition, 0);
 
-		minecraft.getItemRenderer().zLevel += 100;
-		minecraft.getItemRenderer().renderItemAndEffectIntoGUI(minecraft.player, itemStack, 0, 0);
-		renderItemOverlayIntoGUI(font, itemStack, matrixStack);
-		minecraft.getItemRenderer().zLevel -= 100;
-		GlStateManager.disableBlend();
-		RenderHelper.disableStandardItemLighting();
+			minecraft.getItemRenderer().renderAndDecorateItem(itemStack, 0, 0);
+			RenderSystem.setShader(GameRenderer::getPositionColorShader);
+		}
+		modelPoseStack.popPose();
 
-		GlStateManager.popMatrix();
+		renderItemOverlayIntoGUI(font, itemStack);
+
+		RenderSystem.applyModelViewMatrix();
 
 		if (config.showHelpText()) {
-			String modName = ItemZoom.MOD_NAME;
-			int stringWidth = font.getStringWidth(modName);
+			String modName = Constants.MOD_NAME;
+			int stringWidth = font.width(modName);
 			int x = (containerScreen.getGuiLeft() - stringWidth) / 2;
-			int y = (scaledHeight + Math.round(17 * scale)) / 2;
-			font.func_238421_b_(matrixStack, modName, x, y, 4210752);
+			int y = (scaledHeight + Math.round(19 * scale)) / 2;
+			float z = minecraft.getItemRenderer().blitOffset + 200.0F;
+			poseStack = new PoseStack();
+			poseStack.translate(0, 0, z);
+			font.draw(poseStack, modName, x, y, 4210752);
 
 			if (config.isToggledEnabled()) {
-				String toggleText = keyBinding.func_238171_j_().getString();
-				stringWidth = font.getStringWidth(toggleText);
+				Component displayName = keyMapping.getTranslatedKeyMessage();
+				String toggleText = displayName.getString();
+				stringWidth = font.width(toggleText);
 				x = (containerScreen.getGuiLeft() - stringWidth) / 2;
-				y += font.FONT_HEIGHT;
-				font.func_238421_b_(matrixStack, toggleText, x, y, 4210752);
+				y += font.lineHeight;
+				font.draw(poseStack, toggleText, x, y, 4210752);
 			}
 		}
 	}
 
-	private static FontRenderer getFontRenderer(Minecraft minecraft, ItemStack itemStack) {
-		FontRenderer fontRenderer = itemStack.getItem().getFontRenderer(itemStack);
+	private static Font getFont(Minecraft minecraft, ItemStack itemStack) {
+		IItemRenderProperties renderProperties = RenderProperties.get(itemStack);
+		Font fontRenderer = renderProperties.getFont(itemStack);
 		if (fontRenderer == null) {
-			fontRenderer = minecraft.fontRenderer;
+			fontRenderer = minecraft.font;
 		}
 		return fontRenderer;
 	}
 
-	@SuppressWarnings("deprecation")
-	public void renderItemOverlayIntoGUI(FontRenderer fr, ItemStack stack, MatrixStack matrixStack) {
+	public void renderItemOverlayIntoGUI(Font font, ItemStack stack) {
 		if (!stack.isEmpty()) {
+			Minecraft minecraft = Minecraft.getInstance();
+			Tesselator tesselator = Tesselator.getInstance();
+
 			if (config.showStackSize() && stack.getCount() != 1) {
-				matrixStack.push();
-				matrixStack.translate(0, 0, 500);
 				String s = String.valueOf(stack.getCount());
-				GlStateManager.disableLighting();
-				GlStateManager.disableDepthTest();
-				GlStateManager.disableBlend();
-				fr.func_238405_a_(matrixStack, s, (float) (17 - fr.getStringWidth(s)), 9f, 16777215);
-				GlStateManager.enableLighting();
-				GlStateManager.enableDepthTest();
-				// Fixes opaque cooldown overlay a bit lower
-				// TODO: check if enabled blending still screws things up down the line.
-				GlStateManager.enableBlend();
-				matrixStack.pop();
+				float x = (19 - 2 - font.width(s));
+				float y = (6 + 3);
+				float z = minecraft.getItemRenderer().blitOffset + 200.0F;
+
+				PoseStack poseStack = new PoseStack();
+				poseStack.translate(0.0D, 0.0D, z);
+				BufferBuilder bufferBuilder = tesselator.getBuilder();
+				MultiBufferSource.BufferSource bufferSource = MultiBufferSource.immediate(bufferBuilder);
+				font.drawInBatch(s, x, y, 16777215, true, poseStack.last().pose(), bufferSource, false, 0, 15728880);
+				bufferSource.endBatch();
 			}
 
-			if (config.showDamageBar() && stack.getItem().showDurabilityBar(stack)) {
-				GlStateManager.disableLighting();
-				GlStateManager.disableDepthTest();
-				GlStateManager.disableTexture();
-				GlStateManager.disableAlphaTest();
-				GlStateManager.disableBlend();
-				Tessellator tessellator = Tessellator.getInstance();
-				BufferBuilder bufferBuilder = tessellator.getBuffer();
-				double health = stack.getItem().getDurabilityForDisplay(stack);
-				int rgbfordisplay = stack.getItem().getRGBDurabilityForDisplay(stack);
-				int i = Math.round(13.0F - (float) health * 13.0F);
-				draw(bufferBuilder, 2, 13, 13, 2, 0, 0, 0, 255);
-				draw(bufferBuilder, 2, 13, i, 1, rgbfordisplay >> 16 & 255, rgbfordisplay >> 8 & 255, rgbfordisplay & 255, 255);
-				GlStateManager.enableBlend();
-				GlStateManager.enableAlphaTest();
-				GlStateManager.enableTexture();
-				GlStateManager.enableLighting();
-				GlStateManager.enableDepthTest();
+			if (config.showDurabilityBar() && stack.getItem().showDurabilityBar(stack)) {
+				RenderSystem.disableDepthTest();
+				RenderSystem.disableTexture();
+				RenderSystem.disableBlend();
+				BufferBuilder bufferbuilder = tesselator.getBuilder();
+				double durability = stack.getItem().getDurabilityForDisplay(stack);
+				int i = Math.round(13.0F - (float)durability * 13.0F);
+				int rgb = stack.getItem().getRGBDurabilityForDisplay(stack);
+				fillRect(bufferbuilder, 2, 13, 13, 2, 0, 0, 0, 255);
+				fillRect(bufferbuilder, 2, 13, i, 1, rgb >> 16 & 255, rgb >> 8 & 255, rgb & 255, 255);
+				RenderSystem.enableBlend();
+				RenderSystem.enableTexture();
+				RenderSystem.enableDepthTest();
 			}
 
-			ClientPlayerEntity entityplayersp = Minecraft.getInstance().player;
-			float f3 = entityplayersp == null ? 0.0F : entityplayersp.getCooldownTracker().getCooldown(stack.getItem(), Minecraft.getInstance().getRenderPartialTicks());
-
-			if (f3 > 0.0F) {
-				GlStateManager.disableLighting();
-				GlStateManager.disableDepthTest();
-				GlStateManager.disableTexture();
-				Tessellator tessellator = Tessellator.getInstance();
-				BufferBuilder bufferBuilder = tessellator.getBuffer();
-				draw(bufferBuilder, 0, MathHelper.floor(16.0F * (1.0F - f3)), 16, MathHelper.ceil(16.0F * f3), 255, 255, 255, 127);
-				GlStateManager.enableTexture();
-				GlStateManager.enableLighting();
-				GlStateManager.enableDepthTest();
+			if (config.showCooldown()) {
+				LocalPlayer localplayer = minecraft.player;
+				float f;
+				if (localplayer == null) {
+					f = 0.0F;
+				} else {
+					ItemCooldowns cooldowns = localplayer.getCooldowns();
+					f = cooldowns.getCooldownPercent(stack.getItem(), minecraft.getFrameTime());
+				}
+				if (f > 0.0F) {
+					RenderSystem.disableDepthTest();
+					RenderSystem.disableTexture();
+					RenderSystem.enableBlend();
+					RenderSystem.defaultBlendFunc();
+					BufferBuilder bufferbuilder = tesselator.getBuilder();
+					fillRect(bufferbuilder, 0, Mth.floor(16.0F * (1.0F - f)), 16, Mth.ceil(16.0F * f), 255, 255, 255, 127);
+					RenderSystem.enableTexture();
+					RenderSystem.enableDepthTest();
+				}
 			}
 		}
 	}
 
-	private static void draw(BufferBuilder renderer, int x, int y, int width, int height, int red, int green, int blue, int alpha) {
-		renderer.begin(7, DefaultVertexFormats.POSITION_COLOR);
-		renderer.pos(x, y, 0.0D).color(red, green, blue, alpha).endVertex();
-		renderer.pos(x, y + height, 0.0D).color(red, green, blue, alpha).endVertex();
-		renderer.pos(x + width, y + height, 0.0D).color(red, green, blue, alpha).endVertex();
-		renderer.pos(x + width, y, 0.0D).color(red, green, blue, alpha).endVertex();
-		Tessellator.getInstance().draw();
+	/**
+	 * Modeled after {@link ItemRenderer#fillRect(BufferBuilder, int, int, int, int, int, int, int, int)}
+	 */
+	@SuppressWarnings("JavadocReference")
+	private static void fillRect(BufferBuilder renderer, int x, int y, int width, int height, int red, int green, int blue, int alpha) {
+		RenderSystem.setShader(GameRenderer::getPositionColorShader);
+		renderer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+		renderer.vertex(x, y, 0.0D).color(red, green, blue, alpha).endVertex();
+		renderer.vertex(x, y + height, 0.0D).color(red, green, blue, alpha).endVertex();
+		renderer.vertex(x + width, y + height, 0.0D).color(red, green, blue, alpha).endVertex();
+		renderer.vertex(x + width, y, 0.0D).color(red, green, blue, alpha).endVertex();
+		renderer.end();
+		BufferUploader.end(renderer);
 	}
-
 }

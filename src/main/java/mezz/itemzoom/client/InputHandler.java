@@ -1,11 +1,8 @@
 package mezz.itemzoom.client;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import mezz.itemzoom.client.config.Config;
-import net.minecraft.client.util.InputMappings;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 
-@OnlyIn(Dist.CLIENT)
 public class InputHandler {
 	private final Config config;
 	private final KeyBindings keyBindings;
@@ -16,7 +13,7 @@ public class InputHandler {
 		this.keyBindings = keyBindings;
 	}
 
-	public boolean handleInput(InputMappings.Input input) {
+	public boolean handleInput(InputConstants.Key input) {
 		if (keyBindings.toggle.isActiveAndMatches(input)) {
 			config.toggleEnabled();
 			return true;
@@ -33,7 +30,7 @@ public class InputHandler {
 		return false;
 	}
 
-	public boolean handleInputReleased(InputMappings.Input input) {
+	public boolean handleInputReleased(InputConstants.Key input) {
 		if (keyBindings.hold.isActiveAndMatches(input)) {
 			enableKeyHeld = false;
 			return true;
