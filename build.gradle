@@ -10,12 +10,15 @@ buildscript {
 
 plugins {
     id 'java'
+    id 'eclipse'
+    id 'idea'
 }
 apply plugin: "net.minecraftforge.gradle"
 
-// these two are required for the java plugin to generate jar files with a version
+// these are required for the java plugin to generate jar files with a version
 version = "${version_major}.${version_minor}.${version_patch}"
-group = "mezz.itemzoom" // http://maven.apache.org/guides/mini/guide-naming-conventions.html
+group = 'mezz.itemzoom' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
+archivesBaseName = "itemzoom-${minecraft_version}"
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(16)
 
@@ -27,7 +30,7 @@ minecraft {
     runs {
         client {
             property 'forge.logging.console.level', 'debug'
-            workingDirectory project.file('run')
+            workingDirectory file('run')
             mods {
                 itemzoom {
                     sources sourceSets.main
@@ -36,7 +39,7 @@ minecraft {
         }
         server {
             property 'forge.logging.console.level', 'debug'
-            workingDirectory project.file('run')
+            workingDirectory file('run')
             mods {
                 itemzoom {
                     sources sourceSets.main
@@ -66,7 +69,7 @@ dependencies {
 jar {
     manifest {
         attributes([
-                'Specification-Title'     : 'ItemZoom',
+                'Specification-Title'     : 'Item Zoom',
                 'Specification-Vendor'    : 'mezz',
                 'Specification-Version'   : "${project.version}",
                 'Implementation-Title'    : project.name,
@@ -80,7 +83,7 @@ jar {
 
 def replaceResources = tasks.register("replaceResources", Copy) {
     it.outputs.upToDateWhen { false }
-    //Copy it into the build dir
+    // Copy it into the build dir
     it.from(sourceSets.main.resources) {
         include "META-INF/mods.toml"
         expand 'version': version, 'mc_version': minecraft_version_range, 'forge_version': forge_version_range, "loader_version": loader_version_range
@@ -96,4 +99,12 @@ processResources {
 
 classes.configure {
     dependsOn(replaceResources)
+}
+
+idea {
+    module {
+        for (String exclude in ['run', 'out', 'logs']) {
+            excludeDirs += file(exclude)
+        }
+    }
 }
