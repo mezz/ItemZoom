@@ -212,14 +212,14 @@ public class RenderHandler {
 				bufferSource.endBatch();
 			}
 
-			if (config.showDurabilityBar() && stack.getItem().showDurabilityBar(stack)) {
+			if (config.showDurabilityBar() && stack.getItem().isBarVisible(stack)) {
 				RenderSystem.disableDepthTest();
 				RenderSystem.disableTexture();
 				RenderSystem.disableBlend();
 				BufferBuilder bufferbuilder = tesselator.getBuilder();
-				double durability = stack.getItem().getDurabilityForDisplay(stack);
-				int i = Math.round(13.0F - (float)durability * 13.0F);
-				int rgb = stack.getItem().getRGBDurabilityForDisplay(stack);
+				double durability = stack.getItem().getBarWidth(stack);
+				int i = Math.round((float) durability);
+				int rgb = stack.getItem().getBarColor(stack);
 				fillRect(bufferbuilder, 2, 13, 13, 2, 0, 0, 0, 255);
 				fillRect(bufferbuilder, 2, 13, i, 1, rgb >> 16 & 255, rgb >> 8 & 255, rgb & 255, 255);
 				RenderSystem.enableBlend();
