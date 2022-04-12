@@ -27,11 +27,11 @@ public class JeiCompat {
 	}
 
 	private static Optional<ItemStack> getIngredientOverlayStack() {
-        return ingredientListOverlay.map(i -> i.getIngredientUnderMouse(VanillaTypes.ITEM));
+        return ingredientListOverlay.map(i -> i.getIngredientUnderMouse(VanillaTypes.ITEM_STACK));
     }
 
 	private static Optional<ItemStack> getBookmarkOverlayStack() {
-		return bookmarkOverlay.map(b -> b.getIngredientUnderMouse(VanillaTypes.ITEM));
+		return bookmarkOverlay.map(b -> b.getIngredientUnderMouse(VanillaTypes.ITEM_STACK));
 	}
 
 	public static boolean isLoaded() {

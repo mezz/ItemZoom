@@ -66,3 +66,12 @@ Great for builders looking for the right materials!
     ordering="NONE"
     # Side this dependency is applied on - BOTH, CLIENT or SERVER
     side="CLIENT"
+
+[[dependencies.itemzoom]]
+    modId="jei" #mandatory
+    mandatory=false #mandatory
+    versionRange="${jei_version_range}" #mandatory
+    # An ordering relationship for the dependency - BEFORE or AFTER required if the relationship is not mandatory
+    ordering="NONE"
+    # Side this dependency is applied on - BOTH, CLIENT or SERVER
+    side="CLIENT"
