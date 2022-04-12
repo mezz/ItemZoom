@@ -14,6 +14,7 @@ plugins {
     id 'idea'
 }
 apply plugin: "net.minecraftforge.gradle"
+apply from: "buildtools/AppleSiliconSupport.gradle"
 
 // these are required for the java plugin to generate jar files with a version
 version = "${version_major}.${version_minor}.${version_patch}"
