@@ -33,7 +33,7 @@ public class Config {
 				.defineInRange("zoom.amount", DEFAULT_ZOOM, MIN_ZOOM, MAX_ZOOM, Integer.class);
 
 		jeiOnly = builder
-				.comment("Zoom items only from the JEI ingredient list overlay.")
+				.comment("Zoom items only from the JEI ingredient and bookmark list overlays.")
 				.translation("config.itemzoom.jei.only")
 				.define("jei.only", false);
 
