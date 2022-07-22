@@ -6,18 +6,20 @@
     "key.itemzoom.zoom.out": "Pomniejsz",
 
     "_comment": "Config",
-    "config.itemzoom.title": "Konfiguracja %MODNAME",
+    "config.itemzoom.title": "Konfiguracja moda %MODNAME",
 
-    "config.itemzoom.toggle.enabled": "Włącz/wyłącz Item Zoom",
-    "config.itemzoom.toggle.enabled.comment": "Jeśli ustawione na \"false\", Item Zoom będzie wyłączony.",
+    "config.itemzoom.toggle.enabled": "Item Zoom włączony",
+    "config.itemzoom.toggle.enabled.comment": "Jeśli ustawione na „false”, Item Zoom będzie wyłączony.",
     "config.itemzoom.zoom.amount": "Wartość powiększenia",
-    "config.itemzoom.zoom.amount.comment": "Ustaw niższą wartość, żeby zmniejszyć powiększenie przedmiotu.",
-    "config.itemzoom.jei.only": "Wyłącznie nakładka JEI",
-    "config.itemzoom.jei.only.comment": "Powiększaj przedmioty wyłącznie z nakładki z listą składników JEI.",
-    "config.itemzoom.show.help.text": "Wyświetlaj tekst pomocy",
-    "config.itemzoom.show.help.text.comment": "Wyświetlaj nazwę \"Item Zoom\" i przypisany klawisz do włączania/wyłączania tego moda poniżej powiększonego przedmiotu.",
-    "config.itemzoom.show.damage.bar": "Wyświetlaj pasek wytrzymałości",
-    "config.itemzoom.show.damage.bar.comment": "Wyświetlaj pasek wytrzymałości danego przedmiotu przy jego powiększeniu.",
-    "config.itemzoom.show.stack.size": "Wyświetlaj rozmiar stacka",
-    "config.itemzoom.show.stack.size.comment": "Wyświetlaj rozmiar stacka danego przedmiotu przy jego powiększeniu."
+    "config.itemzoom.zoom.amount.comment": "Ustawienie niższej wartości spowoduje zmniejszenie powiększenia przedmiotu.",
+    "config.itemzoom.jei.only": "Jedynie nakładki JEI",
+    "config.itemzoom.jei.only.comment": "Powiększanie przedmiotów jedynie z nakładki z listą składników oraz z listą zakładek JEI.",
+    "config.itemzoom.show.help.text": "Wyświetlanie tekstu pomocy",
+    "config.itemzoom.show.help.text.comment": "Wyświetlanie poniżej powiększonego przedmiotu nazwy „Item Zoom” oraz klawisza przypisanego do włączania/wyłączania tego moda.",
+    "config.itemzoom.show.damage.bar": "Wyświetlanie paska wytrzymałości",
+    "config.itemzoom.show.damage.bar.comment": "Wyświetlanie paska wytrzymałości przedmiotu przy jego powiększeniu.",
+    "config.itemzoom.show.stack.size": "Wyświetlanie rozmiaru stacka",
+    "config.itemzoom.show.stack.size.comment": "Wyświetlanie rozmiaru stacka przedmiotu przy jego powiększeniu.",
+    "config.itemzoom.show.cooldown": "Wyświetlanie cooldownu",
+    "config.itemzoom.show.cooldown.comment": "Wyświetlanie animacji odnawiania się przedmiotu (cooldown) przy jego powiększeniu."
 }
