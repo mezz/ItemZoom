@@ -5,6 +5,7 @@ import mezz.itemzoom.client.InputHandler;
 import mezz.itemzoom.client.KeyBindings;
 import mezz.itemzoom.client.RenderHandler;
 import mezz.itemzoom.client.config.Config;
+import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.client.event.RenderTooltipEvent;
 import net.minecraftforge.client.event.ScreenEvent;
 import net.minecraftforge.common.MinecraftForge;
@@ -20,6 +21,7 @@ public class ItemZoomClient {
 		Config config = new Config();
 
 		IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
+		modEventBus.addListener(EventPriority.NORMAL, false, RegisterKeyMappingsEvent.class, KeyBindings::create);
 		modEventBus.addListener(EventPriority.NORMAL, false, ModConfigEvent.Loading.class, configLoadingEvent -> {
 			setup(config);
 		});
@@ -27,9 +29,8 @@ public class ItemZoomClient {
 	}
 
 	private static void setup(Config config) {
-		KeyBindings keyBindings = new KeyBindings();
-		InputHandler inputHandler = new InputHandler(config, keyBindings);
-		RenderHandler renderHandler = new RenderHandler(config, inputHandler::isEnableKeyHeld, keyBindings.toggle);
+		InputHandler inputHandler = new InputHandler(config);
+		RenderHandler renderHandler = new RenderHandler(config, inputHandler::isEnableKeyHeld);
 
 		IEventBus eventBus = MinecraftForge.EVENT_BUS;
 		setupInputHandler(inputHandler, eventBus);
@@ -37,25 +38,25 @@ public class ItemZoomClient {
 	}
 
 	private static void setupInputHandler(InputHandler inputHandler, IEventBus eventBus) {
-		eventBus.addListener(EventPriority.LOW, false, ScreenEvent.KeyboardKeyPressedEvent.Post.class, (event) -> {
+		eventBus.addListener(EventPriority.LOW, false, ScreenEvent.KeyPressed.Post.class, (event) -> {
 			InputConstants.Key input = InputConstants.getKey(event.getKeyCode(), event.getScanCode());
 			if (inputHandler.handleInput(input)) {
 				event.setCanceled(true);
 			}
 		});
-		eventBus.addListener(EventPriority.LOW, false, ScreenEvent.KeyboardKeyReleasedEvent.Post.class, (event) -> {
+		eventBus.addListener(EventPriority.LOW, false, ScreenEvent.KeyReleased.Post.class, (event) -> {
 			InputConstants.Key input = InputConstants.getKey(event.getKeyCode(), event.getScanCode());
 			if (inputHandler.handleInputReleased(input)) {
 				event.setCanceled(true);
 			}
 		});
-		eventBus.addListener(EventPriority.LOW, false, ScreenEvent.MouseClickedEvent.Pre.class, (event) -> {
+		eventBus.addListener(EventPriority.LOW, false, ScreenEvent.MouseButtonPressed.Pre.class, (event) -> {
 			InputConstants.Key input = InputConstants.Type.MOUSE.getOrCreate(event.getButton());
 			if (inputHandler.handleInput(input)) {
 				event.setCanceled(true);
 			}
 		});
-		eventBus.addListener(EventPriority.LOW, false, ScreenEvent.MouseReleasedEvent.Pre.class, (event) -> {
+		eventBus.addListener(EventPriority.LOW, false, ScreenEvent.MouseButtonReleased.Pre.class, (event) -> {
 			InputConstants.Key input = InputConstants.Type.MOUSE.getOrCreate(event.getButton());
 			if (inputHandler.handleInputReleased(input)) {
 				event.setCanceled(true);
@@ -64,7 +65,7 @@ public class ItemZoomClient {
 	}
 
 	private static void setupRenderHandler(RenderHandler renderHandler, IEventBus eventBus) {
-		eventBus.addListener(EventPriority.NORMAL, false, ScreenEvent.DrawScreenEvent.Post.class, (event) -> {
+		eventBus.addListener(EventPriority.NORMAL, false, ScreenEvent.Render.Post.class, (event) -> {
 			renderHandler.onScreenDrawn();
 		});
 		eventBus.addListener(EventPriority.NORMAL, false, RenderTooltipEvent.Pre.class, (event) -> {

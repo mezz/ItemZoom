@@ -5,15 +5,14 @@ import mezz.itemzoom.client.config.Config;
 
 public class InputHandler {
 	private final Config config;
-	private final KeyBindings keyBindings;
 	private boolean enableKeyHeld = false;
 
-	public InputHandler(Config config, KeyBindings keyBindings) {
+	public InputHandler(Config config) {
 		this.config = config;
-		this.keyBindings = keyBindings;
 	}
 
 	public boolean handleInput(InputConstants.Key input) {
+		KeyBindings keyBindings = KeyBindings.getInstance();
 		if (keyBindings.toggle.isActiveAndMatches(input)) {
 			config.toggleEnabled();
 			return true;
@@ -31,6 +30,7 @@ public class InputHandler {
 	}
 
 	public boolean handleInputReleased(InputConstants.Key input) {
+		KeyBindings keyBindings = KeyBindings.getInstance();
 		if (keyBindings.hold.isActiveAndMatches(input)) {
 			enableKeyHeld = false;
 			return true;

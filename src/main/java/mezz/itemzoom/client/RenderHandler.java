@@ -6,14 +6,12 @@ import java.util.function.Supplier;
 import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import mezz.itemzoom.client.compat.JeiCompat;
 import mezz.itemzoom.client.config.Config;
-import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 
 import net.minecraft.client.gui.Font;
@@ -32,8 +30,8 @@ import net.minecraft.world.item.ItemCooldowns;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.IItemRenderProperties;
-import net.minecraftforge.client.RenderProperties;
+import net.minecraftforge.client.extensions.common.IClientItemExtensions;
+
 
 @OnlyIn(Dist.CLIENT)
 public class RenderHandler {
@@ -43,12 +41,10 @@ public class RenderHandler {
 	private static Rect2i renderedThisFrame = null;
 	private final Config config;
 	private final Supplier<Boolean> isEnableKeyHeld;
-	private final KeyMapping keyMapping;
 
-	public RenderHandler(Config config, Supplier<Boolean> isEnableKeyHeld, KeyMapping keyMapping) {
+	public RenderHandler(Config config, Supplier<Boolean> isEnableKeyHeld) {
 		this.config = config;
 		this.isEnableKeyHeld = isEnableKeyHeld;
-		this.keyMapping = keyMapping;
 	}
 
 	public void onScreenDrawn() {
@@ -139,7 +135,6 @@ public class RenderHandler {
 		final float renderHeight = scale * 16;
 		final float xPosition = availableAreaX + ((availableAreaWidth - renderWidth) / 2f);
 		final float yPosition = availableAreaY + ((availableAreaHeight - renderHeight) / 2f);
-		Font font = getFont(minecraft, itemStack);
 
 		PoseStack modelPoseStack = RenderSystem.getModelViewStack();
 		modelPoseStack.pushPose();
@@ -152,7 +147,7 @@ public class RenderHandler {
 		}
 		modelPoseStack.popPose();
 
-		renderItemOverlayIntoGUI(font, itemStack);
+		renderItemOverlayIntoGUI(itemStack);
 
 		RenderSystem.applyModelViewMatrix();
 
@@ -163,44 +158,49 @@ public class RenderHandler {
 			poseStack.translate(0, 0, z);
 
 			String modName = Constants.MOD_NAME;
-			int stringWidth = font.width(modName);
+			Font nameFont = getFont(minecraft, itemStack, IClientItemExtensions.FontContext.SELECTED_ITEM_NAME);
+
+			int stringWidth = nameFont.width(modName);
 			if (stringWidth < availableAreaWidth) {
 				int x = availableAreaX + ((availableAreaWidth - stringWidth) / 2);
-				font.draw(poseStack, modName, x, y, 4210752);
+				nameFont.draw(poseStack, modName, x, y, 4210752);
 
-				y += font.lineHeight;
+				y += nameFont.lineHeight;
 			}
 
 			if (config.isToggledEnabled()) {
-				Component displayName = keyMapping.getTranslatedKeyMessage();
+				KeyBindings keyBindings = KeyBindings.getInstance();
+				Component displayName = keyBindings.toggle.getTranslatedKeyMessage();
 				String toggleText = displayName.getString();
-				stringWidth = font.width(toggleText);
+				Font minecraftFont = minecraft.font;
+				stringWidth = minecraftFont.width(toggleText);
 				if (stringWidth < availableAreaWidth) {
 					int x = availableAreaX + ((availableAreaWidth - stringWidth) / 2);
-					font.draw(poseStack, toggleText, x, y, 4210752);
+					minecraftFont.draw(poseStack, toggleText, x, y, 4210752);
 				}
 			}
 		}
 		return true;
 	}
 
-	private static Font getFont(Minecraft minecraft, ItemStack itemStack) {
-		IItemRenderProperties renderProperties = RenderProperties.get(itemStack);
-		Font fontRenderer = renderProperties.getFont(itemStack);
+	private static Font getFont(Minecraft minecraft, ItemStack itemStack, IClientItemExtensions.FontContext context) {
+		IClientItemExtensions renderProperties = IClientItemExtensions.of(itemStack);
+		Font fontRenderer = renderProperties.getFont(itemStack, context);
 		if (fontRenderer == null) {
 			fontRenderer = minecraft.font;
 		}
 		return fontRenderer;
 	}
 
-	public void renderItemOverlayIntoGUI(Font font, ItemStack stack) {
+	public void renderItemOverlayIntoGUI(ItemStack stack) {
 		if (!stack.isEmpty()) {
 			Minecraft minecraft = Minecraft.getInstance();
 			Tesselator tesselator = Tesselator.getInstance();
 
 			if (config.showStackSize() && stack.getCount() != 1) {
+				Font countFont = getFont(minecraft, stack, IClientItemExtensions.FontContext.ITEM_COUNT);
 				String s = String.valueOf(stack.getCount());
-				float x = (19 - 2 - font.width(s));
+				float x = (19 - 2 - countFont.width(s));
 				float y = (6 + 3);
 				float z = minecraft.getItemRenderer().blitOffset + 200.0F;
 
@@ -208,7 +208,7 @@ public class RenderHandler {
 				poseStack.translate(0.0D, 0.0D, z);
 				BufferBuilder bufferBuilder = tesselator.getBuilder();
 				MultiBufferSource.BufferSource bufferSource = MultiBufferSource.immediate(bufferBuilder);
-				font.drawInBatch(s, x, y, 16777215, true, poseStack.last().pose(), bufferSource, false, 0, 15728880);
+				countFont.drawInBatch(s, x, y, 16777215, true, poseStack.last().pose(), bufferSource, false, 0, 15728880);
 				bufferSource.endBatch();
 			}
 
@@ -222,6 +222,7 @@ public class RenderHandler {
 				int rgb = stack.getItem().getBarColor(stack);
 				fillRect(bufferbuilder, 2, 13, 13, 2, 0, 0, 0, 255);
 				fillRect(bufferbuilder, 2, 13, i, 1, rgb >> 16 & 255, rgb >> 8 & 255, rgb & 255, 255);
+				tesselator.end();
 				RenderSystem.enableBlend();
 				RenderSystem.enableTexture();
 				RenderSystem.enableDepthTest();
@@ -243,6 +244,7 @@ public class RenderHandler {
 					RenderSystem.defaultBlendFunc();
 					BufferBuilder bufferbuilder = tesselator.getBuilder();
 					fillRect(bufferbuilder, 0, Mth.floor(16.0F * (1.0F - f)), 16, Mth.ceil(16.0F * f), 255, 255, 255, 127);
+					tesselator.end();
 					RenderSystem.enableTexture();
 					RenderSystem.enableDepthTest();
 				}
@@ -262,6 +264,5 @@ public class RenderHandler {
 		renderer.vertex(x + width, y + height, 0.0D).color(red, green, blue, alpha).endVertex();
 		renderer.vertex(x + width, y, 0.0D).color(red, green, blue, alpha).endVertex();
 		renderer.end();
-		BufferUploader.end(renderer);
 	}
 }
