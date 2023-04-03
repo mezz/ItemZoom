@@ -5,16 +5,15 @@ import java.util.function.Supplier;
 
 import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
 import mezz.itemzoom.client.compat.JeiCompat;
 import mezz.itemzoom.client.config.Config;
 import net.minecraft.client.Minecraft;
 
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiComponent;
+import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.recipebook.RecipeBookComponent;
@@ -23,7 +22,6 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.Rect2i;
-import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemCooldowns;
@@ -52,7 +50,7 @@ public class RenderHandler {
 		renderedThisFrame = null;
 	}
 
-	public void onItemStackTooltip(@Nullable ItemStack itemStack, int x, int y) {
+	public void onItemStackTooltip(PoseStack poseStack, @Nullable ItemStack itemStack, int x, int y) {
 		if (!config.isToggledEnabled() && !isEnableKeyHeld.get()) {
 			return;
 		}
@@ -69,7 +67,7 @@ public class RenderHandler {
 			Rect2i renderArea = getRenderingArea(containerScreen, x);
 			// avoid rendering zoomed items in the same space as the item being hovered over
 			if (!renderArea.contains(x, y)) {
-				if (renderZoomedStack(itemStack, renderArea, minecraft)) {
+				if (renderZoomedStack(poseStack, itemStack, renderArea, minecraft)) {
 					renderedThisFrame = renderArea;
 				}
 			}
@@ -111,14 +109,14 @@ public class RenderHandler {
 			if (guiRecipeBook.isVisible()) {
 				return guiRecipeBook.tabButtons.stream()
 						.findAny()
-						.map(tab -> tab.x)
+						.map(AbstractWidget::getX)
 						.orElse((guiRecipeBook.width - 147) / 2 - guiRecipeBook.xOffset);
 			}
 		}
 		return containerScreen.getGuiLeft();
 	}
 
-	private boolean renderZoomedStack(ItemStack itemStack, Rect2i availableArea, Minecraft minecraft) {
+	private boolean renderZoomedStack(PoseStack poseStack, ItemStack itemStack, Rect2i availableArea, Minecraft minecraft) {
 		final int availableAreaX = availableArea.getX();
 		final int availableAreaY = availableArea.getY();
 		final int availableAreaWidth = availableArea.getWidth();
@@ -136,26 +134,22 @@ public class RenderHandler {
 		final float xPosition = availableAreaX + ((availableAreaWidth - renderWidth) / 2f);
 		final float yPosition = availableAreaY + ((availableAreaHeight - renderHeight) / 2f);
 
-		PoseStack modelPoseStack = RenderSystem.getModelViewStack();
-		modelPoseStack.pushPose();
+		poseStack.pushPose();
 		{
-			modelPoseStack.translate(xPosition, yPosition, 0);
-			modelPoseStack.scale(scale, scale, 1);
+			poseStack.translate(xPosition, yPosition, 0);
+			poseStack.scale(scale, scale, 1);
 
-			minecraft.getItemRenderer().renderAndDecorateItem(itemStack, 0, 0);
+			minecraft.getItemRenderer().renderAndDecorateItem(poseStack, itemStack, 0, 0);
 			RenderSystem.setShader(GameRenderer::getPositionColorShader);
-		}
-		modelPoseStack.popPose();
 
-		renderItemOverlayIntoGUI(itemStack);
+			renderItemOverlayIntoGUI(poseStack, itemStack);
+		}
+		poseStack.popPose();
 
 		RenderSystem.applyModelViewMatrix();
 
 		if (config.showHelpText()) {
 			int y = availableAreaY + ((availableAreaHeight + Math.round(19 * scale)) / 2);
-			float z = minecraft.getItemRenderer().blitOffset + 200.0F;
-			PoseStack poseStack = new PoseStack();
-			poseStack.translate(0, 0, z);
 
 			String modName = Constants.MOD_NAME;
 			Font nameFont = getFont(minecraft, itemStack, IClientItemExtensions.FontContext.SELECTED_ITEM_NAME);
@@ -192,77 +186,62 @@ public class RenderHandler {
 		return fontRenderer;
 	}
 
-	public void renderItemOverlayIntoGUI(ItemStack stack) {
-		if (!stack.isEmpty()) {
-			Minecraft minecraft = Minecraft.getInstance();
-			Tesselator tesselator = Tesselator.getInstance();
+	public void renderItemOverlayIntoGUI(PoseStack poseStack, ItemStack itemStack) {
+		if (itemStack.isEmpty()) {
+			return;
+		}
 
-			if (config.showStackSize() && stack.getCount() != 1) {
-				Font countFont = getFont(minecraft, stack, IClientItemExtensions.FontContext.ITEM_COUNT);
-				String s = String.valueOf(stack.getCount());
-				float x = (19 - 2 - countFont.width(s));
-				float y = (6 + 3);
-				float z = minecraft.getItemRenderer().blitOffset + 200.0F;
+		Minecraft minecraft = Minecraft.getInstance();
 
-				PoseStack poseStack = new PoseStack();
-				poseStack.translate(0.0D, 0.0D, z);
-				BufferBuilder bufferBuilder = tesselator.getBuilder();
-				MultiBufferSource.BufferSource bufferSource = MultiBufferSource.immediate(bufferBuilder);
-				countFont.drawInBatch(s, x, y, 16777215, true, poseStack.last().pose(), bufferSource, false, 0, 15728880);
+		poseStack.pushPose();
+		{
+			if (config.showStackSize() && itemStack.getCount() != 1) {
+				String countString = String.valueOf(itemStack.getCount());
+				Font itemCountFont = getFont(minecraft, itemStack, IClientItemExtensions.FontContext.ITEM_COUNT);
+
+				poseStack.translate(0.0F, 0.0F, 200.0F);
+				Tesselator tesselator = Tesselator.getInstance();
+				MultiBufferSource.BufferSource bufferSource = MultiBufferSource.immediate(tesselator.getBuilder());
+				itemCountFont.drawInBatch(
+						countString,
+						17.0F - itemCountFont.width(countString),
+						9.0F,
+						0xFFFFFF,
+						true,
+						poseStack.last().pose(),
+						bufferSource,
+						Font.DisplayMode.NORMAL,
+						0,
+						0xF000F0
+				);
 				bufferSource.endBatch();
 			}
 
-			if (config.showDurabilityBar() && stack.getItem().isBarVisible(stack)) {
+			if (config.showDurabilityBar() && itemStack.isBarVisible()) {
 				RenderSystem.disableDepthTest();
-				RenderSystem.disableTexture();
-				RenderSystem.disableBlend();
-				BufferBuilder bufferbuilder = tesselator.getBuilder();
-				double durability = stack.getItem().getBarWidth(stack);
-				int i = Math.round((float) durability);
-				int rgb = stack.getItem().getBarColor(stack);
-				fillRect(bufferbuilder, 2, 13, 13, 2, 0, 0, 0, 255);
-				fillRect(bufferbuilder, 2, 13, i, 1, rgb >> 16 & 255, rgb >> 8 & 255, rgb & 255, 255);
-				tesselator.end();
-				RenderSystem.enableBlend();
-				RenderSystem.enableTexture();
+				int k = itemStack.getBarWidth();
+				int l = itemStack.getBarColor();
+				GuiComponent.fill(poseStack, 2, 13, 15, 15, -0xFFFFFF);
+				GuiComponent.fill(poseStack, 2, 13, 2 + k, 14, l | -0xFFFFFF);
 				RenderSystem.enableDepthTest();
 			}
 
 			if (config.showCooldown()) {
 				LocalPlayer localplayer = minecraft.player;
-				float f;
-				if (localplayer == null) {
-					f = 0.0F;
-				} else {
+				if (localplayer != null) {
 					ItemCooldowns cooldowns = localplayer.getCooldowns();
-					f = cooldowns.getCooldownPercent(stack.getItem(), minecraft.getFrameTime());
-				}
-				if (f > 0.0F) {
-					RenderSystem.disableDepthTest();
-					RenderSystem.disableTexture();
-					RenderSystem.enableBlend();
-					RenderSystem.defaultBlendFunc();
-					BufferBuilder bufferbuilder = tesselator.getBuilder();
-					fillRect(bufferbuilder, 0, Mth.floor(16.0F * (1.0F - f)), 16, Mth.ceil(16.0F * f), 255, 255, 255, 127);
-					tesselator.end();
-					RenderSystem.enableTexture();
-					RenderSystem.enableDepthTest();
+					float cooldownPercent = cooldowns.getCooldownPercent(itemStack.getItem(), minecraft.getFrameTime());
+					if (cooldownPercent > 0.0F) {
+						RenderSystem.disableDepthTest();
+						int i1 = Mth.floor(16.0F * (1.0F - cooldownPercent));
+						int j1 = i1 + Mth.ceil(16.0F * cooldownPercent);
+						GuiComponent.fill(poseStack, 0, i1, 16, j1, Integer.MAX_VALUE);
+						RenderSystem.enableDepthTest();
+					}
 				}
 			}
 		}
+		poseStack.popPose();
 	}
 
-	/**
-	 * Modeled after {@link ItemRenderer#fillRect(BufferBuilder, int, int, int, int, int, int, int, int)}
-	 */
-	@SuppressWarnings("JavadocReference")
-	private static void fillRect(BufferBuilder renderer, int x, int y, int width, int height, int red, int green, int blue, int alpha) {
-		RenderSystem.setShader(GameRenderer::getPositionColorShader);
-		renderer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
-		renderer.vertex(x, y, 0.0D).color(red, green, blue, alpha).endVertex();
-		renderer.vertex(x, y + height, 0.0D).color(red, green, blue, alpha).endVertex();
-		renderer.vertex(x + width, y + height, 0.0D).color(red, green, blue, alpha).endVertex();
-		renderer.vertex(x + width, y, 0.0D).color(red, green, blue, alpha).endVertex();
-		renderer.end();
-	}
 }

@@ -30,27 +30,27 @@ public class Config {
 		zoomAmount = builder
 				.comment("Set lower amount to make the item zoom less.")
 				.translation("config.itemzoom.zoom.amount")
-				.defineInRange("zoom.amount", DEFAULT_ZOOM, MIN_ZOOM, MAX_ZOOM, Integer.class);
+				.defineInRange("zoom_amount", DEFAULT_ZOOM, MIN_ZOOM, MAX_ZOOM, Integer.class);
 
 		jeiOnly = builder
 				.comment("Zoom items only from the JEI ingredient and bookmark list overlays.")
 				.translation("config.itemzoom.jei.only")
-				.define("jei.only", false);
+				.define("jei_only", false);
 
 		showHelpText = builder
 				.comment("Display name \"Item Zoom\" and the hotkey to toggle this mod below the zoomed item.")
 				.translation("config.itemzoom.show.help.text")
-				.define("show.help.text", true);
+				.define("show.help_text", true);
 
 		showDurabilityBar = builder
 				.comment("Display the item's durability bar when zoomed.")
 				.translation("config.itemzoom.show.damage.bar")
-				.define("show.damage.bar", false);
+				.define("show.damage_bar", false);
 
 		showStackSize = builder
 				.comment("Display the item's stack size when zoomed.")
 				.translation("config.itemzoom.show.stack.size")
-				.define("show.stack.size", false);
+				.define("show.stack_size", false);
 
 		showCooldown = builder
 				.comment("Display the item's cooldown animation when zoomed.")
