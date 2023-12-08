@@ -12,7 +12,7 @@ import mezz.itemzoom.client.config.Config;
 import net.minecraft.client.Minecraft;
 
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiComponent;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -50,14 +50,14 @@ public class RenderHandler {
 		renderedThisFrame = null;
 	}
 
-	public void onItemStackTooltip(PoseStack poseStack, @Nullable ItemStack itemStack, int x, int y) {
+	public void onItemStackTooltip(GuiGraphics guiGraphics, @Nullable ItemStack itemStack, int x, int y) {
 		if (!config.isToggledEnabled() && !isEnableKeyHeld.get()) {
 			return;
 		}
 		if (itemStack == null || itemStack.isEmpty()) {
 			return;
 		}
-		if (config.isJeiOnly() && !ItemStack.isSame(itemStack, JeiCompat.getStackUnderMouse())) {
+		if (config.isJeiOnly() && !ItemStack.isSameItem(itemStack, JeiCompat.getStackUnderMouse())) {
 			return;
 		}
 
@@ -67,7 +67,7 @@ public class RenderHandler {
 			Rect2i renderArea = getRenderingArea(containerScreen, x);
 			// avoid rendering zoomed items in the same space as the item being hovered over
 			if (!renderArea.contains(x, y)) {
-				if (renderZoomedStack(poseStack, itemStack, renderArea, minecraft)) {
+				if (renderZoomedStack(guiGraphics, itemStack, renderArea, minecraft)) {
 					renderedThisFrame = renderArea;
 				}
 			}
@@ -116,7 +116,7 @@ public class RenderHandler {
 		return containerScreen.getGuiLeft();
 	}
 
-	private boolean renderZoomedStack(PoseStack poseStack, ItemStack itemStack, Rect2i availableArea, Minecraft minecraft) {
+	private boolean renderZoomedStack(GuiGraphics guiGraphics, ItemStack itemStack, Rect2i availableArea, Minecraft minecraft) {
 		final int availableAreaX = availableArea.getX();
 		final int availableAreaY = availableArea.getY();
 		final int availableAreaWidth = availableArea.getWidth();
@@ -134,15 +134,16 @@ public class RenderHandler {
 		final float xPosition = availableAreaX + ((availableAreaWidth - renderWidth) / 2f);
 		final float yPosition = availableAreaY + ((availableAreaHeight - renderHeight) / 2f);
 
+		PoseStack poseStack = guiGraphics.pose();
 		poseStack.pushPose();
 		{
 			poseStack.translate(xPosition, yPosition, 0);
 			poseStack.scale(scale, scale, 1);
 
-			minecraft.getItemRenderer().renderAndDecorateItem(poseStack, itemStack, 0, 0);
+			guiGraphics.renderItem(itemStack, 0, 0);
 			RenderSystem.setShader(GameRenderer::getPositionColorShader);
 
-			renderItemOverlayIntoGUI(poseStack, itemStack);
+			renderItemOverlayIntoGUI(guiGraphics, itemStack);
 		}
 		poseStack.popPose();
 
@@ -157,7 +158,7 @@ public class RenderHandler {
 			int stringWidth = nameFont.width(modName);
 			if (stringWidth < availableAreaWidth) {
 				int x = availableAreaX + ((availableAreaWidth - stringWidth) / 2);
-				nameFont.draw(poseStack, modName, x, y, 4210752);
+				guiGraphics.drawString(nameFont, modName, x, y, 4210752, false);
 
 				y += nameFont.lineHeight;
 			}
@@ -170,7 +171,7 @@ public class RenderHandler {
 				stringWidth = minecraftFont.width(toggleText);
 				if (stringWidth < availableAreaWidth) {
 					int x = availableAreaX + ((availableAreaWidth - stringWidth) / 2);
-					minecraftFont.draw(poseStack, toggleText, x, y, 4210752);
+					guiGraphics.drawString(minecraftFont, toggleText, x, y, 4210752, false);
 				}
 			}
 		}
@@ -186,13 +187,14 @@ public class RenderHandler {
 		return fontRenderer;
 	}
 
-	public void renderItemOverlayIntoGUI(PoseStack poseStack, ItemStack itemStack) {
+	public void renderItemOverlayIntoGUI(GuiGraphics guiGraphics, ItemStack itemStack) {
 		if (itemStack.isEmpty()) {
 			return;
 		}
 
 		Minecraft minecraft = Minecraft.getInstance();
 
+		PoseStack poseStack = guiGraphics.pose();
 		poseStack.pushPose();
 		{
 			if (config.showStackSize() && itemStack.getCount() != 1) {
@@ -221,8 +223,8 @@ public class RenderHandler {
 				RenderSystem.disableDepthTest();
 				int k = itemStack.getBarWidth();
 				int l = itemStack.getBarColor();
-				GuiComponent.fill(poseStack, 2, 13, 15, 15, -0xFFFFFF);
-				GuiComponent.fill(poseStack, 2, 13, 2 + k, 14, l | -0xFFFFFF);
+				guiGraphics.fill(2, 13, 15, 15, -0xFFFFFF);
+				guiGraphics.fill(2, 13, 2 + k, 14, l | -0xFFFFFF);
 				RenderSystem.enableDepthTest();
 			}
 
@@ -235,7 +237,7 @@ public class RenderHandler {
 						RenderSystem.disableDepthTest();
 						int i1 = Mth.floor(16.0F * (1.0F - cooldownPercent));
 						int j1 = i1 + Mth.ceil(16.0F * cooldownPercent);
-						GuiComponent.fill(poseStack, 0, i1, 16, j1, Integer.MAX_VALUE);
+						guiGraphics.fill(0, i1, 16, j1, Integer.MAX_VALUE);
 						RenderSystem.enableDepthTest();
 					}
 				}
