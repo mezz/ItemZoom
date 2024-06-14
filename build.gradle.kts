@@ -2,7 +2,7 @@ plugins {
     id("java")
     id("idea")
     id("eclipse")
-    id("net.minecraftforge.gradle") version("[6.0,6.2)")
+    id("net.minecraftforge.gradle") version("6.0.25")
 }
 
 // gradle.properties
@@ -75,14 +75,34 @@ minecraft {
     }
 }
 
+// Sets up a dependency configuration called 'localRuntime'.
+// This configuration should be used instead of 'runtimeOnly' to declare
+// a dependency that will be present for runtime testing but that is
+// "optional", meaning it will not be pulled by dependents of this mod.
+val localRuntime = configurations.create("localRuntime")
+
+configurations {
+    runtimeClasspath {
+        extendsFrom(localRuntime)
+    }
+}
+
 dependencies {
     "minecraft"(
         group = "net.minecraftforge",
         name   = "forge",
         version = "${minecraftVersion}-${forgeVersion}"
     )
-    compileOnly(fg.deobf("mezz.jei:jei-${minecraftVersion}-common-api:${jeiVersion}"))
-    runtimeOnly(fg.deobf("mezz.jei:jei-${minecraftVersion}-forge:${jeiVersion}"))
+    compileOnly("mezz.jei:jei-${minecraftVersion}-common-api:${jeiVersion}")
+    localRuntime("mezz.jei:jei-${minecraftVersion}-forge:${jeiVersion}")
+
+    // Hack fix for now, force jopt-simple to be exactly 5.0.4 because Mojang ships that version,
+    // but some transitive dependencies request 6.0+
+    implementation("net.sf.jopt-simple:jopt-simple:5.0.4") {
+        version {
+            strictly("5.0.4")
+        }
+    }
 }
 
 tasks.withType<Javadoc> {
@@ -151,8 +171,13 @@ sourceSets.forEach() {
 
 idea {
     module {
+        isDownloadJavadoc = true
+        isDownloadSources = true
         for (fileName in listOf("run", "out", "logs")) {
             excludeDirs.add(file(fileName))
         }
+    }
+    project {
+        jdkName = modJavaVersion
     }
 }
