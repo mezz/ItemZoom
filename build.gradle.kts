@@ -81,8 +81,16 @@ dependencies {
         name   = "forge",
         version = "${minecraftVersion}-${forgeVersion}"
     )
-    compileOnly(fg.deobf("mezz.jei:jei-${minecraftVersion}-common-api:${jeiVersion}"))
-    runtimeOnly(fg.deobf("mezz.jei:jei-${minecraftVersion}-forge:${jeiVersion}"))
+    compileOnly("mezz.jei:jei-${minecraftVersion}-common-api:${jeiVersion}")
+    runtimeOnly("mezz.jei:jei-${minecraftVersion}-forge:${jeiVersion}")
+
+    // Hack fix for now, force jopt-simple to be exactly 5.0.4 because Mojang ships that version,
+    // but some transitive dependencies request 6.0+
+    implementation("net.sf.jopt-simple:jopt-simple:5.0.4") {
+        version {
+            strictly("5.0.4")
+        }
+    }
 }
 
 tasks.withType<Javadoc> {
@@ -151,8 +159,13 @@ sourceSets.forEach() {
 
 idea {
     module {
+        isDownloadJavadoc = true
+        isDownloadSources = true
         for (fileName in listOf("run", "out", "logs")) {
             excludeDirs.add(file(fileName))
         }
+    }
+    project {
+        jdkName = modJavaVersion
     }
 }
