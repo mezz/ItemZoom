@@ -2,7 +2,7 @@ plugins {
     id("java")
     id("idea")
     id("eclipse")
-    id("net.minecraftforge.gradle") version("[6.0,6.2)")
+    id("net.minecraftforge.gradle") version("6.0.25")
 }
 
 // gradle.properties
@@ -75,6 +75,18 @@ minecraft {
     }
 }
 
+// Sets up a dependency configuration called 'localRuntime'.
+// This configuration should be used instead of 'runtimeOnly' to declare
+// a dependency that will be present for runtime testing but that is
+// "optional", meaning it will not be pulled by dependents of this mod.
+val localRuntime = configurations.create("localRuntime")
+
+configurations {
+    runtimeClasspath {
+        extendsFrom(localRuntime)
+    }
+}
+
 dependencies {
     "minecraft"(
         group = "net.minecraftforge",
@@ -82,7 +94,7 @@ dependencies {
         version = "${minecraftVersion}-${forgeVersion}"
     )
     compileOnly("mezz.jei:jei-${minecraftVersion}-common-api:${jeiVersion}")
-    runtimeOnly("mezz.jei:jei-${minecraftVersion}-forge:${jeiVersion}")
+    localRuntime("mezz.jei:jei-${minecraftVersion}-forge:${jeiVersion}")
 
     // Hack fix for now, force jopt-simple to be exactly 5.0.4 because Mojang ships that version,
     // but some transitive dependencies request 6.0+
