@@ -1,16 +1,11 @@
 package mezz.itemzoom.client;
 
-import javax.annotation.Nullable;
-import java.util.function.Supplier;
-
 import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.Tesselator;
 import mezz.itemzoom.client.compat.JeiCompat;
 import mezz.itemzoom.client.config.Config;
 import net.minecraft.client.Minecraft;
-
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
@@ -22,16 +17,17 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.Rect2i;
+import net.minecraft.client.renderer.RenderBuffers;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemCooldowns;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.extensions.common.IClientItemExtensions;
+import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
+
+import javax.annotation.Nullable;
+import java.util.function.Supplier;
 
 
-@OnlyIn(Dist.CLIENT)
 public class RenderHandler {
 	@Nullable
 	public static Rect2i rendering = null;
@@ -137,8 +133,8 @@ public class RenderHandler {
 		PoseStack poseStack = guiGraphics.pose();
 		poseStack.pushPose();
 		{
-			poseStack.translate(xPosition, yPosition, 0);
-			poseStack.scale(scale, scale, 1);
+			poseStack.translate(xPosition, yPosition, 232.0F);
+			poseStack.scale(scale, scale, scale);
 
 			guiGraphics.renderItem(itemStack, 0, 0);
 			RenderSystem.setShader(GameRenderer::getPositionColorShader);
@@ -202,8 +198,8 @@ public class RenderHandler {
 				Font itemCountFont = getFont(minecraft, itemStack, IClientItemExtensions.FontContext.ITEM_COUNT);
 
 				poseStack.translate(0.0F, 0.0F, 200.0F);
-				Tesselator tesselator = Tesselator.getInstance();
-				MultiBufferSource.BufferSource bufferSource = MultiBufferSource.immediate(tesselator.getBuilder());
+				RenderBuffers renderBuffers = minecraft.renderBuffers();
+				MultiBufferSource.BufferSource bufferSource = renderBuffers.bufferSource();
 				itemCountFont.drawInBatch(
 						countString,
 						17.0F - itemCountFont.width(countString),
@@ -232,7 +228,8 @@ public class RenderHandler {
 				LocalPlayer localplayer = minecraft.player;
 				if (localplayer != null) {
 					ItemCooldowns cooldowns = localplayer.getCooldowns();
-					float cooldownPercent = cooldowns.getCooldownPercent(itemStack.getItem(), minecraft.getFrameTime());
+					float partialTicks = minecraft.getTimer().getGameTimeDeltaPartialTick(true);
+					float cooldownPercent = cooldowns.getCooldownPercent(itemStack.getItem(), partialTicks);
 					if (cooldownPercent > 0.0F) {
 						RenderSystem.disableDepthTest();
 						int i1 = Mth.floor(16.0F * (1.0F - cooldownPercent));

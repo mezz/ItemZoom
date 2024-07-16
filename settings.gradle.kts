@@ -8,6 +8,11 @@ pluginManagement {
 		exclusiveMaven("https://maven.minecraftforge.net") {
 			includeGroupByRegex("net\\.minecraftforge.*")
 		}
+		exclusiveMaven("https://maven.neoforged.net/releases") {
+			includeGroupByRegex("net\\.neoforged.*")
+			includeGroup("codechicken")
+			includeGroup("net.covers1624")
+		}
 		gradlePluginPortal()
 	}
 	resolutionStrategy {

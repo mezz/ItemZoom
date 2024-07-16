@@ -1,8 +1,8 @@
 package mezz.itemzoom.client.config;
 
 import mezz.itemzoom.client.compat.JeiCompat;
-import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
+import net.neoforged.neoforge.common.ModConfigSpec;
+import net.neoforged.neoforge.common.ModConfigSpec.ConfigValue;
 
 public class Config {
 	private static final int MIN_ZOOM = 10;
@@ -16,10 +16,10 @@ public class Config {
 	private final ConfigValue<Boolean> showDurabilityBar;
 	private final ConfigValue<Boolean> showStackSize;
 	private final ConfigValue<Boolean> showCooldown;
-	private final ForgeConfigSpec configSpec;
+	private final ModConfigSpec configSpec;
 
 	public Config() {
-		ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder();
+		ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
 		builder.push("itemzoom");
 
 		toggledEnabled = builder
@@ -117,7 +117,7 @@ public class Config {
 		return jeiOnly.get() && JeiCompat.isLoaded();
 	}
 
-	public ForgeConfigSpec getConfigSpec() {
+	public ModConfigSpec getConfigSpec() {
 		return configSpec;
 	}
 }

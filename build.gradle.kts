@@ -2,12 +2,13 @@ plugins {
     id("java")
     id("idea")
     id("eclipse")
-    id("net.minecraftforge.gradle") version("6.0.25")
+    // https://projects.neoforged.net/neoforged/neogradle
+    id("net.neoforged.gradle.userdev") version("7.0.154")
 }
 
 // gradle.properties
-val forgeVersion: String by extra
-val forgeVersionRange: String by extra
+val neoForgeVersion: String by extra
+val neoForgeVersionRange: String by extra
 val githubUrl: String by extra
 val minecraftVersion: String by extra
 val minecraftVersionRange: String by extra
@@ -21,6 +22,8 @@ val specificationVersion: String by extra
 val jeiVersion: String by extra
 val jeiVersionRange: String by extra
 val loaderVersionRange: String by extra
+val parchmentMappingsMinecraftVersion: String by extra
+val parchmentMappingsVersion: String by extra
 
 // these are required for the java plugin to generate jar files with a version
 version = specificationVersion
@@ -44,34 +47,22 @@ base {
 }
 
 minecraft {
-    mappings("official", minecraftVersion)
+    accessTransformers {
+        file("src/main/resources/META-INF/accesstransformer.cfg")
+    }
+}
 
-    copyIdeResources.set(true)
-
-    accessTransformer(file("src/main/resources/META-INF/accesstransformer.cfg"))
-
-    runs {
-        create("client") {
-            taskName("runClientDev")
-            property("forge.logging.console.level", "debug")
-            workingDirectory(file("run/client"))
-            mods {
-                create(modId) {
-                    source(sourceSets.main.get())
-                }
-            }
-        }
-        create("server") {
-            taskName("Server")
-            property("forge.logging.console.level", "debug")
-            workingDirectory(file("run/server"))
-            mods {
-                create(modId) {
-                    source(sourceSets.main.get())
-                }
-            }
-            args.add("--nogui")
-        }
+runs {
+    create("client") {
+        configure("client")
+        systemProperty("forge.logging.console.level", "debug")
+        workingDirectory(file("run/client/Dev"))
+    }
+    create("server") {
+        configure("server")
+        systemProperty("forge.logging.console.level", "debug")
+        workingDirectory(file("run/server"))
+        programArguments("nogui")
     }
 }
 
@@ -79,22 +70,22 @@ minecraft {
 // This configuration should be used instead of 'runtimeOnly' to declare
 // a dependency that will be present for runtime testing but that is
 // "optional", meaning it will not be pulled by dependents of this mod.
-val localRuntime = configurations.create("localRuntime")
+val localRuntime = configurations.maybeCreate("localRuntime")
 
 configurations {
     runtimeClasspath {
-        extendsFrom(localRuntime)
+        extendsFrom(localRuntime.get())
     }
 }
 
 dependencies {
-    "minecraft"(
-        group = "net.minecraftforge",
-        name   = "forge",
-        version = "${minecraftVersion}-${forgeVersion}"
+    implementation(
+        group = "net.neoforged",
+        name   = "neoforge",
+        version = neoForgeVersion
     )
-    compileOnly("mezz.jei:jei-${minecraftVersion}-common-api:${jeiVersion}")
-    localRuntime("mezz.jei:jei-${minecraftVersion}-forge:${jeiVersion}")
+    compileOnly("mezz.jei:jei-${minecraftVersion}-neoforge-api:${jeiVersion}")
+    localRuntime("mezz.jei:jei-${minecraftVersion}-neoforge:${jeiVersion}")
 
     // Hack fix for now, force jopt-simple to be exactly 5.0.4 because Mojang ships that version,
     // but some transitive dependencies request 6.0+
@@ -115,6 +106,11 @@ tasks.withType<Javadoc> {
 tasks.withType<JavaCompile> {
     options.encoding = "UTF-8"
     options.release.set(JavaLanguageVersion.of(modJavaVersion).asInt())
+    javaToolchains {
+        compilerFor {
+            languageVersion.set(JavaLanguageVersion.of(modJavaVersion))
+        }
+    }
 }
 
 tasks.withType<Jar> {
@@ -132,23 +128,26 @@ tasks.withType<Jar> {
 
 tasks.withType<ProcessResources> {
     // this will ensure that this task is redone when the versions change.
-    inputs.property("version", version)
+    val properties = mapOf(
+        "neoForgeVersionRange" to neoForgeVersionRange,
+        "githubUrl" to githubUrl,
+        "loaderVersionRange" to loaderVersionRange,
+        "minecraftVersion" to minecraftVersion,
+        "minecraftVersionRange" to minecraftVersionRange,
+        "modAuthor" to modAuthor,
+        "modDescription" to modDescription,
+        "modId" to modId,
+        "modJavaVersion" to modJavaVersion,
+        "modName" to modName,
+        "jeiVersionRange" to jeiVersionRange,
+        "version" to version,
+    )
+    properties.forEach { (key, value) ->
+        inputs.property(key, value)
+    }
 
-    filesMatching(listOf("META-INF/mods.toml", "pack.mcmeta")) {
-        expand(mapOf(
-            "forgeVersionRange" to forgeVersionRange,
-            "githubUrl" to githubUrl,
-            "loaderVersionRange" to loaderVersionRange,
-            "minecraftVersion" to minecraftVersion,
-            "minecraftVersionRange" to minecraftVersionRange,
-            "modAuthor" to modAuthor,
-            "modDescription" to modDescription,
-            "modId" to modId,
-            "modJavaVersion" to modJavaVersion,
-            "modName" to modName,
-            "jeiVersionRange" to jeiVersionRange,
-            "version" to version,
-        ))
+    filesMatching(listOf("META-INF/neoforge.mods.toml", "pack.mcmeta")) {
+        expand(properties)
     }
 }
 
@@ -179,5 +178,35 @@ idea {
     }
     project {
         jdkName = modJavaVersion
+    }
+}
+
+subsystems {
+    parchment {
+        // The Minecraft version for which the Parchment mappings were created.
+        // This does not necessarily need to match the Minecraft version your mod targets
+        // Defaults to the value of Gradle property neogradle.subsystems.parchment.minecraftVersion
+        minecraftVersion = parchmentMappingsMinecraftVersion
+
+        // The version of Parchment mappings to apply.
+        // See https://parchmentmc.org/docs/getting-started for a list.
+        // Defaults to the value of Gradle property neogradle.subsystems.parchment.mappingsVersion
+        mappingsVersion = parchmentMappingsVersion
+
+        // Overrides the full Maven coordinate of the Parchment artifact to use
+        // This is computed from the minecraftVersion and mappingsVersion properties by default.
+        // If you set this property explicitly, minecraftVersion and mappingsVersion will be ignored.
+        // The built-in default value can also be overriden using the Gradle property neogradle.subsystems.parchment.parchmentArtifact
+        // parchmentArtifact = "org.parchmentmc.data:parchment-$minecraftVersion:$mappingsVersion:checked@zip"
+
+        // Set this to false if you don't want the https://maven.parchmentmc.org/ repository to be added automatically when
+        // applying Parchment mappings is enabled
+        // The built-in default value can also be overriden using the Gradle property neogradle.subsystems.parchment.addRepository
+        // addRepository = true
+
+        // Can be used to explicitly disable this subsystem. By default, it will be enabled automatically as soon
+        // as parchmentArtifact or minecraftVersion and mappingsVersion are set.
+        // The built-in default value can also be overriden using the Gradle property neogradle.subsystems.parchment.enabled
+        // enabled = true
     }
 }
