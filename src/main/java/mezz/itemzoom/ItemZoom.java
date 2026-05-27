@@ -14,8 +14,10 @@ import net.neoforged.fml.ModLoadingContext;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.config.ModConfigEvent;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.world.inventory.Slot;
+import net.neoforged.neoforge.client.event.ContainerScreenEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
-import net.neoforged.neoforge.client.event.RenderTooltipEvent;
 import net.neoforged.neoforge.client.event.ScreenEvent;
 import net.neoforged.neoforge.common.NeoForge;
 
@@ -78,8 +80,19 @@ public class ItemZoom {
 		eventBus.addListener(EventPriority.NORMAL, false, ScreenEvent.Render.Post.class, (event) -> {
 			renderHandler.onScreenDrawn();
 		});
-		eventBus.addListener(EventPriority.NORMAL, false, RenderTooltipEvent.Pre.class, (event) -> {
-			renderHandler.onItemStackTooltip(event.getGraphics(), event.getItemStack(), event.getX(), event.getY());
+		// Render before tooltips (ContainerScreenEvent.Foreground), not during RenderTooltipEvent.Pre,
+		// so flushed item geometry does not draw over tooltip text at z=400.
+		eventBus.addListener(EventPriority.NORMAL, false, ContainerScreenEvent.Render.Foreground.class, (event) -> {
+			AbstractContainerScreen<?> containerScreen = event.getContainerScreen();
+			Slot slot = containerScreen.getSlotUnderMouse();
+			if (slot != null && slot.hasItem()) {
+				renderHandler.onContainerForeground(
+						event.getGuiGraphics(),
+						containerScreen,
+						slot.getItem(),
+						event.getMouseX(),
+						event.getMouseY());
+			}
 		});
 	}
 }

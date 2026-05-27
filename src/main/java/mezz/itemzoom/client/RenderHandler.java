@@ -9,7 +9,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.recipebook.RecipeBookComponent;
 import net.minecraft.client.gui.screens.recipebook.RecipeUpdateListener;
@@ -46,26 +45,28 @@ public class RenderHandler {
 		renderedThisFrame = null;
 	}
 
-	public void onItemStackTooltip(GuiGraphics guiGraphics, @Nullable ItemStack itemStack, int x, int y) {
+	public void onContainerForeground(
+			GuiGraphics guiGraphics,
+			AbstractContainerScreen<?> containerScreen,
+			ItemStack itemStack,
+			int x,
+			int y) {
 		if (!config.isToggledEnabled() && !isEnableKeyHeld.get()) {
 			return;
 		}
-		if (itemStack == null || itemStack.isEmpty()) {
+		if (itemStack.isEmpty()) {
 			return;
 		}
 		if (config.isJeiOnly() && !ItemStack.isSameItem(itemStack, JeiCompat.getStackUnderMouse())) {
 			return;
 		}
 
-		Minecraft minecraft = Minecraft.getInstance();
-		Screen currentScreen = minecraft.screen;
-		if (currentScreen instanceof AbstractContainerScreen<?> containerScreen) {
-			Rect2i renderArea = getRenderingArea(containerScreen, x);
-			// avoid rendering zoomed items in the same space as the item being hovered over
-			if (!renderArea.contains(x, y)) {
-				if (renderZoomedStack(guiGraphics, itemStack, renderArea, minecraft)) {
-					renderedThisFrame = renderArea;
-				}
+		Minecraft minecraft = containerScreen.getMinecraft();
+		Rect2i renderArea = getRenderingArea(containerScreen, x);
+		// avoid rendering zoomed items in the same space as the item being hovered over
+		if (!renderArea.contains(x, y)) {
+			if (renderZoomedStack(guiGraphics, itemStack, renderArea, minecraft, containerScreen)) {
+				renderedThisFrame = renderArea;
 			}
 		}
 	}
@@ -112,7 +113,12 @@ public class RenderHandler {
 		return containerScreen.getGuiLeft();
 	}
 
-	private boolean renderZoomedStack(GuiGraphics guiGraphics, ItemStack itemStack, Rect2i availableArea, Minecraft minecraft) {
+	private boolean renderZoomedStack(
+			GuiGraphics guiGraphics,
+			ItemStack itemStack,
+			Rect2i availableArea,
+			Minecraft minecraft,
+			AbstractContainerScreen<?> containerScreen) {
 		final int availableAreaX = availableArea.getX();
 		final int availableAreaY = availableArea.getY();
 		final int availableAreaWidth = availableArea.getWidth();
@@ -132,45 +138,49 @@ public class RenderHandler {
 
 		PoseStack poseStack = guiGraphics.pose();
 		poseStack.pushPose();
+		// Foreground fires while the container pose is translated to guiLeft/guiTop.
+		poseStack.translate(-containerScreen.getGuiLeft(), -containerScreen.getGuiTop(), 0.0F);
 		{
-			poseStack.translate(xPosition, yPosition, 232.0F);
+			poseStack.pushPose();
+			poseStack.translate(xPosition, yPosition, 100.0F);
 			poseStack.scale(scale, scale, scale);
 
 			guiGraphics.renderItem(itemStack, 0, 0);
 			RenderSystem.setShader(GameRenderer::getPositionColorShader);
 
 			renderItemOverlayIntoGUI(guiGraphics, itemStack);
+			poseStack.popPose();
+
+			if (config.showHelpText()) {
+				int y = availableAreaY + ((availableAreaHeight + Math.round(19 * scale)) / 2);
+
+				String modName = Constants.MOD_NAME;
+				Font nameFont = getFont(minecraft, itemStack, IClientItemExtensions.FontContext.SELECTED_ITEM_NAME);
+
+				int stringWidth = nameFont.width(modName);
+				if (stringWidth < availableAreaWidth) {
+					int x = availableAreaX + ((availableAreaWidth - stringWidth) / 2);
+					guiGraphics.drawString(nameFont, modName, x, y, 4210752, false);
+
+					y += nameFont.lineHeight;
+				}
+
+				if (config.isToggledEnabled()) {
+					KeyBindings keyBindings = KeyBindings.getInstance();
+					Component displayName = keyBindings.toggle.getTranslatedKeyMessage();
+					String toggleText = displayName.getString();
+					Font minecraftFont = minecraft.font;
+					stringWidth = minecraftFont.width(toggleText);
+					if (stringWidth < availableAreaWidth) {
+						int x = availableAreaX + ((availableAreaWidth - stringWidth) / 2);
+						guiGraphics.drawString(minecraftFont, toggleText, x, y, 4210752, false);
+					}
+				}
+			}
 		}
 		poseStack.popPose();
 
 		RenderSystem.applyModelViewMatrix();
-
-		if (config.showHelpText()) {
-			int y = availableAreaY + ((availableAreaHeight + Math.round(19 * scale)) / 2);
-
-			String modName = Constants.MOD_NAME;
-			Font nameFont = getFont(minecraft, itemStack, IClientItemExtensions.FontContext.SELECTED_ITEM_NAME);
-
-			int stringWidth = nameFont.width(modName);
-			if (stringWidth < availableAreaWidth) {
-				int x = availableAreaX + ((availableAreaWidth - stringWidth) / 2);
-				guiGraphics.drawString(nameFont, modName, x, y, 4210752, false);
-
-				y += nameFont.lineHeight;
-			}
-
-			if (config.isToggledEnabled()) {
-				KeyBindings keyBindings = KeyBindings.getInstance();
-				Component displayName = keyBindings.toggle.getTranslatedKeyMessage();
-				String toggleText = displayName.getString();
-				Font minecraftFont = minecraft.font;
-				stringWidth = minecraftFont.width(toggleText);
-				if (stringWidth < availableAreaWidth) {
-					int x = availableAreaX + ((availableAreaWidth - stringWidth) / 2);
-					guiGraphics.drawString(minecraftFont, toggleText, x, y, 4210752, false);
-				}
-			}
-		}
 		return true;
 	}
 
