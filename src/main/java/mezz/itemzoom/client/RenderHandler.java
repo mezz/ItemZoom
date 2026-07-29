@@ -74,7 +74,7 @@ public class RenderHandler {
 		boolean isRecipesGuiHoveredItem = ItemStack.isSameItem(itemStack, recipesGuiStackUnderMouse);
 
 		Minecraft minecraft = Minecraft.getInstance();
-		Screen currentScreen = minecraft.screen;
+		Screen currentScreen = minecraft.gui.screen();
 		if (currentScreen != null) {
 			Rect2i renderArea = getRenderingArea(minecraft, currentScreen, isJeiHoveredItem, isRecipesGuiHoveredItem, x);
 			if (renderArea == null) {
