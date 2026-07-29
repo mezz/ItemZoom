@@ -3,7 +3,7 @@ plugins {
     id("idea")
     id("eclipse")
     // https://projects.neoforged.net/neoforged/neogradle
-    id("net.neoforged.gradle.userdev") version("7.0.154")
+    id("net.neoforged.gradle.userdev") version("7.1.38")
 }
 
 // gradle.properties
@@ -22,8 +22,6 @@ val specificationVersion: String by extra
 val jeiVersion: String by extra
 val jeiVersionRange: String by extra
 val loaderVersionRange: String by extra
-val parchmentMappingsMinecraftVersion: String by extra
-val parchmentMappingsVersion: String by extra
 
 // these are required for the java plugin to generate jar files with a version
 version = specificationVersion
@@ -178,35 +176,5 @@ idea {
     }
     project {
         jdkName = modJavaVersion
-    }
-}
-
-subsystems {
-    parchment {
-        // The Minecraft version for which the Parchment mappings were created.
-        // This does not necessarily need to match the Minecraft version your mod targets
-        // Defaults to the value of Gradle property neogradle.subsystems.parchment.minecraftVersion
-        minecraftVersion = parchmentMappingsMinecraftVersion
-
-        // The version of Parchment mappings to apply.
-        // See https://parchmentmc.org/docs/getting-started for a list.
-        // Defaults to the value of Gradle property neogradle.subsystems.parchment.mappingsVersion
-        mappingsVersion = parchmentMappingsVersion
-
-        // Overrides the full Maven coordinate of the Parchment artifact to use
-        // This is computed from the minecraftVersion and mappingsVersion properties by default.
-        // If you set this property explicitly, minecraftVersion and mappingsVersion will be ignored.
-        // The built-in default value can also be overriden using the Gradle property neogradle.subsystems.parchment.parchmentArtifact
-        // parchmentArtifact = "org.parchmentmc.data:parchment-$minecraftVersion:$mappingsVersion:checked@zip"
-
-        // Set this to false if you don't want the https://maven.parchmentmc.org/ repository to be added automatically when
-        // applying Parchment mappings is enabled
-        // The built-in default value can also be overriden using the Gradle property neogradle.subsystems.parchment.addRepository
-        // addRepository = true
-
-        // Can be used to explicitly disable this subsystem. By default, it will be enabled automatically as soon
-        // as parchmentArtifact or minecraftVersion and mappingsVersion are set.
-        // The built-in default value can also be overriden using the Gradle property neogradle.subsystems.parchment.enabled
-        // enabled = true
     }
 }

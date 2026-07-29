@@ -2,6 +2,7 @@ package mezz.itemzoom.client;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
+import net.minecraft.resources.Identifier;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.settings.KeyConflictContext;
 import net.neoforged.neoforge.client.settings.KeyModifier;
@@ -23,7 +24,8 @@ public class KeyBindings {
 	private KeyBindings(RegisterKeyMappingsEvent registerEvent) {
 		InputConstants.Key zKey = InputConstants.Type.KEYSYM.getOrCreate(GLFW.GLFW_KEY_Z);
 		InputConstants.Key none = InputConstants.UNKNOWN;
-		String category = Constants.MOD_NAME;
+		KeyMapping.Category category = new KeyMapping.Category(Identifier.fromNamespaceAndPath(Constants.MOD_ID, "category"));
+		registerEvent.registerCategory(category);
 		KeyMapping[] allBindings = {
 			toggle = new KeyMapping("key.itemzoom.toggle", KeyConflictContext.GUI, KeyModifier.SHIFT, zKey, category),
 			hold = new KeyMapping("key.itemzoom.hold", KeyConflictContext.GUI, KeyModifier.NONE, none, category),
