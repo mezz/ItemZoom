@@ -49,13 +49,13 @@ public class ItemZoom {
 
 	private static void setupInputHandler(InputHandler inputHandler, IEventBus eventBus) {
 		eventBus.addListener(EventPriority.LOW, false, ScreenEvent.KeyPressed.Post.class, (event) -> {
-			InputConstants.Key input = InputConstants.getKey(event.getKeyCode(), event.getScanCode());
+			InputConstants.Key input = InputConstants.getKey(event.getKeyEvent());
 			if (inputHandler.handleInput(input)) {
 				event.setCanceled(true);
 			}
 		});
 		eventBus.addListener(EventPriority.LOW, false, ScreenEvent.KeyReleased.Post.class, (event) -> {
-			InputConstants.Key input = InputConstants.getKey(event.getKeyCode(), event.getScanCode());
+			InputConstants.Key input = InputConstants.getKey(event.getKeyEvent());
 			if (inputHandler.handleInputReleased(input)) {
 				event.setCanceled(true);
 			}

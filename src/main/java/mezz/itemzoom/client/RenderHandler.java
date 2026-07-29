@@ -1,28 +1,27 @@
 package mezz.itemzoom.client;
 
 import com.mojang.blaze3d.platform.Window;
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.PoseStack;
 import mezz.itemzoom.client.compat.JeiCompat;
 import mezz.itemzoom.client.config.Config;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.gui.screens.inventory.AbstractRecipeBookScreen;
 import net.minecraft.client.gui.screens.recipebook.RecipeBookComponent;
-import net.minecraft.client.gui.screens.recipebook.RecipeUpdateListener;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.client.renderer.RenderBuffers;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.ARGB;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemCooldowns;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
+import org.joml.Matrix3x2fStack;
 
 import javax.annotation.Nullable;
 import java.util.function.Supplier;
@@ -46,7 +45,7 @@ public class RenderHandler {
 		renderedThisFrame = null;
 	}
 
-	public void onItemStackTooltip(GuiGraphics guiGraphics, @Nullable ItemStack itemStack, int x, int y) {
+	public void onItemStackTooltip(GuiGraphicsExtractor guiGraphics, @Nullable ItemStack itemStack, int x, int y) {
 		if (!config.isToggledEnabled() && !isEnableKeyHeld.get()) {
 			return;
 		}
@@ -73,12 +72,12 @@ public class RenderHandler {
 	public Rect2i getRenderingArea(AbstractContainerScreen<?> containerScreen, int mouseX) {
 		Minecraft minecraft = containerScreen.getMinecraft();
 		Window window = minecraft.getWindow();
-		int guiRight = containerScreen.getGuiLeft() + containerScreen.getXSize();
+		int guiRight = containerScreen.getLeftPos() + containerScreen.getImageHeight();
 		int spaceOnLeft = getSpaceOnLeft(containerScreen);
 		int spaceOnRight = window.getGuiScaledWidth() - guiRight;
 
 		final boolean renderLeft;
-		if (mouseX < containerScreen.getGuiLeft()) {
+		if (mouseX < containerScreen.getLeftPos()) {
 			// mouse is to the left side of the gui, render on the right.
 			renderLeft = false;
 		} else if (mouseX > guiRight) {
@@ -90,8 +89,8 @@ public class RenderHandler {
 			renderLeft = (spaceOnLeft * 1.1) >= spaceOnRight;
 		}
 
-		int y = containerScreen.getGuiTop();
-		int height = containerScreen.getYSize();
+		int y = containerScreen.getTopPos();
+		int height = containerScreen.getImageHeight();
 		if (renderLeft) {
 			return new Rect2i(0, y, spaceOnLeft, height);
 		} else {
@@ -100,8 +99,8 @@ public class RenderHandler {
 	}
 
 	private int getSpaceOnLeft(AbstractContainerScreen<?> containerScreen) {
-		if (containerScreen instanceof RecipeUpdateListener recipeListener) {
-			RecipeBookComponent guiRecipeBook = recipeListener.getRecipeBookComponent();
+		if (containerScreen instanceof AbstractRecipeBookScreen<?> recipeListener) {
+			RecipeBookComponent<?> guiRecipeBook = recipeListener.recipeBookComponent;
 			if (guiRecipeBook.isVisible()) {
 				return guiRecipeBook.tabButtons.stream()
 						.findAny()
@@ -109,10 +108,10 @@ public class RenderHandler {
 						.orElse((guiRecipeBook.width - 147) / 2 - guiRecipeBook.xOffset);
 			}
 		}
-		return containerScreen.getGuiLeft();
+		return containerScreen.getLeftPos();
 	}
 
-	private boolean renderZoomedStack(GuiGraphics guiGraphics, ItemStack itemStack, Rect2i availableArea, Minecraft minecraft) {
+	private boolean renderZoomedStack(GuiGraphicsExtractor guiGraphics, ItemStack itemStack, Rect2i availableArea, Minecraft minecraft) {
 		final int availableAreaX = availableArea.getX();
 		final int availableAreaY = availableArea.getY();
 		final int availableAreaWidth = availableArea.getWidth();
@@ -130,20 +129,17 @@ public class RenderHandler {
 		final float xPosition = availableAreaX + ((availableAreaWidth - renderWidth) / 2f);
 		final float yPosition = availableAreaY + ((availableAreaHeight - renderHeight) / 2f);
 
-		PoseStack poseStack = guiGraphics.pose();
-		poseStack.pushPose();
+		Matrix3x2fStack poseStack = guiGraphics.pose();
+		poseStack.pushMatrix();
 		{
-			poseStack.translate(xPosition, yPosition, 232.0F);
-			poseStack.scale(scale, scale, scale);
+			poseStack.translate(xPosition, yPosition);
+			poseStack.scale(scale, scale);
 
-			guiGraphics.renderItem(itemStack, 0, 0);
-			RenderSystem.setShader(GameRenderer::getPositionColorShader);
+			guiGraphics.item(itemStack, 0, 0);
 
 			renderItemOverlayIntoGUI(guiGraphics, itemStack);
 		}
-		poseStack.popPose();
-
-		RenderSystem.applyModelViewMatrix();
+		poseStack.pushMatrix();
 
 		if (config.showHelpText()) {
 			int y = availableAreaY + ((availableAreaHeight + Math.round(19 * scale)) / 2);
@@ -154,7 +150,7 @@ public class RenderHandler {
 			int stringWidth = nameFont.width(modName);
 			if (stringWidth < availableAreaWidth) {
 				int x = availableAreaX + ((availableAreaWidth - stringWidth) / 2);
-				guiGraphics.drawString(nameFont, modName, x, y, 4210752, false);
+				guiGraphics.text(nameFont, modName, x, y, ARGB.opaque(4210752), false);
 
 				y += nameFont.lineHeight;
 			}
@@ -167,7 +163,7 @@ public class RenderHandler {
 				stringWidth = minecraftFont.width(toggleText);
 				if (stringWidth < availableAreaWidth) {
 					int x = availableAreaX + ((availableAreaWidth - stringWidth) / 2);
-					guiGraphics.drawString(minecraftFont, toggleText, x, y, 4210752, false);
+					guiGraphics.text(minecraftFont, toggleText, x, y, ARGB.opaque(4210752), false);
 				}
 			}
 		}
@@ -183,64 +179,48 @@ public class RenderHandler {
 		return fontRenderer;
 	}
 
-	public void renderItemOverlayIntoGUI(GuiGraphics guiGraphics, ItemStack itemStack) {
+	public void renderItemOverlayIntoGUI(GuiGraphicsExtractor guiGraphics, ItemStack itemStack) {
 		if (itemStack.isEmpty()) {
 			return;
 		}
 
 		Minecraft minecraft = Minecraft.getInstance();
 
-		PoseStack poseStack = guiGraphics.pose();
-		poseStack.pushPose();
+		Matrix3x2fStack poseStack = guiGraphics.pose();
+		poseStack.pushMatrix();
 		{
 			if (config.showStackSize() && itemStack.getCount() != 1) {
 				String countString = String.valueOf(itemStack.getCount());
 				Font itemCountFont = getFont(minecraft, itemStack, IClientItemExtensions.FontContext.ITEM_COUNT);
 
-				poseStack.translate(0.0F, 0.0F, 200.0F);
 				RenderBuffers renderBuffers = minecraft.renderBuffers();
 				MultiBufferSource.BufferSource bufferSource = renderBuffers.bufferSource();
-				itemCountFont.drawInBatch(
-						countString,
-						17.0F - itemCountFont.width(countString),
-						9.0F,
-						0xFFFFFF,
-						true,
-						poseStack.last().pose(),
-						bufferSource,
-						Font.DisplayMode.NORMAL,
-						0,
-						0xF000F0
-				);
+				guiGraphics.text(itemCountFont, countString, (int) (17.0F - itemCountFont.width(countString)), (int) 9.0F, ARGB.opaque(0xFFFFFF), true);
 				bufferSource.endBatch();
 			}
 
 			if (config.showDurabilityBar() && itemStack.isBarVisible()) {
-				RenderSystem.disableDepthTest();
 				int k = itemStack.getBarWidth();
 				int l = itemStack.getBarColor();
 				guiGraphics.fill(2, 13, 15, 15, -0xFFFFFF);
 				guiGraphics.fill(2, 13, 2 + k, 14, l | -0xFFFFFF);
-				RenderSystem.enableDepthTest();
 			}
 
 			if (config.showCooldown()) {
 				LocalPlayer localplayer = minecraft.player;
 				if (localplayer != null) {
 					ItemCooldowns cooldowns = localplayer.getCooldowns();
-					float partialTicks = minecraft.getTimer().getGameTimeDeltaPartialTick(true);
-					float cooldownPercent = cooldowns.getCooldownPercent(itemStack.getItem(), partialTicks);
+					float partialTicks = minecraft.getDeltaTracker().getGameTimeDeltaPartialTick(true);
+					float cooldownPercent = cooldowns.getCooldownPercent(itemStack, partialTicks);
 					if (cooldownPercent > 0.0F) {
-						RenderSystem.disableDepthTest();
 						int i1 = Mth.floor(16.0F * (1.0F - cooldownPercent));
 						int j1 = i1 + Mth.ceil(16.0F * cooldownPercent);
 						guiGraphics.fill(0, i1, 16, j1, Integer.MAX_VALUE);
-						RenderSystem.enableDepthTest();
 					}
 				}
 			}
 		}
-		poseStack.popPose();
+		poseStack.popMatrix();
 	}
 
 }
