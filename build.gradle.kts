@@ -2,26 +2,26 @@ plugins {
     id("java")
     id("idea")
     id("eclipse")
-    // https://projects.neoforged.net/neoforged/neogradle
-    id("net.neoforged.gradle.userdev") version("7.1.38")
+    // https://projects.neoforged.net/neoforged/moddevgradle
+    id("net.neoforged.moddev") version("2.0.143")
 }
 
 // gradle.properties
-val neoForgeVersion: String by extra
-val neoForgeVersionRange: String by extra
-val githubUrl: String by extra
-val minecraftVersion: String by extra
-val minecraftVersionRange: String by extra
-val modAuthor: String by extra
-val modDescription: String by extra
-val modGroup: String by extra
-val modId: String by extra
-val modName: String by extra
-val modJavaVersion: String by extra
-val specificationVersion: String by extra
-val jeiVersion: String by extra
-val jeiVersionRange: String by extra
-val loaderVersionRange: String by extra
+val neoForgeVersion = providers.gradleProperty("neoForgeVersion").get()
+val neoForgeVersionRange = providers.gradleProperty("neoForgeVersionRange").get()
+val githubUrl = providers.gradleProperty("githubUrl").get()
+val minecraftVersion = providers.gradleProperty("minecraftVersion").get()
+val minecraftVersionRange = providers.gradleProperty("minecraftVersionRange").get()
+val modAuthor = providers.gradleProperty("modAuthor").get()
+val modDescription = providers.gradleProperty("modDescription").get()
+val modGroup = providers.gradleProperty("modGroup").get()
+val modId = providers.gradleProperty("modId").get()
+val modName = providers.gradleProperty("modName").get()
+val modJavaVersion = providers.gradleProperty("modJavaVersion").get()
+val specificationVersion = providers.gradleProperty("specificationVersion").get()
+val jeiVersion = providers.gradleProperty("jeiVersion").get()
+val jeiVersionRange = providers.gradleProperty("jeiVersionRange").get()
+val loaderVersionRange = providers.gradleProperty("loaderVersionRange").get()
 
 // these are required for the java plugin to generate jar files with a version
 version = specificationVersion
@@ -44,23 +44,30 @@ base {
     archivesName = "${modId}-${minecraftVersion}"
 }
 
-minecraft {
-    accessTransformers {
-        file("src/main/resources/META-INF/accesstransformer.cfg")
-    }
-}
+neoForge {
+    version = neoForgeVersion
+    validateAccessTransformers.set(true)
 
-runs {
-    create("client") {
-        configure("client")
-        systemProperty("forge.logging.console.level", "debug")
-        workingDirectory(file("run/client/Dev"))
+    runs {
+        create("client") {
+            client()
+            logLevel.set(org.slf4j.event.Level.DEBUG)
+            systemProperty("forge.logging.console.level", "debug")
+            gameDirectory.set(layout.projectDirectory.dir("run/client/Dev"))
+        }
+        create("server") {
+            server()
+            logLevel.set(org.slf4j.event.Level.DEBUG)
+            systemProperty("forge.logging.console.level", "debug")
+            gameDirectory.set(layout.projectDirectory.dir("run/server"))
+            programArgument("nogui")
+        }
     }
-    create("server") {
-        configure("server")
-        systemProperty("forge.logging.console.level", "debug")
-        workingDirectory(file("run/server"))
-        programArguments("nogui")
+
+    mods {
+        create(modId) {
+            sourceSet(sourceSets.main.get())
+        }
     }
 }
 
@@ -68,22 +75,17 @@ runs {
 // This configuration should be used instead of 'runtimeOnly' to declare
 // a dependency that will be present for runtime testing but that is
 // "optional", meaning it will not be pulled by dependents of this mod.
-val localRuntime = configurations.maybeCreate("localRuntime")
+val localRuntime = configurations.create("localRuntime")
 
 configurations {
     runtimeClasspath {
-        extendsFrom(localRuntime.get())
+        extendsFrom(localRuntime)
     }
 }
 
 dependencies {
-    implementation(
-        group = "net.neoforged",
-        name   = "neoforge",
-        version = neoForgeVersion
-    )
     compileOnly("mezz.jei:jei-${minecraftVersion}-neoforge-api:${jeiVersion}")
-    localRuntime("mezz.jei:jei-${minecraftVersion}-neoforge:${jeiVersion}")
+    add(localRuntime.name, "mezz.jei:jei-${minecraftVersion}-neoforge:${jeiVersion}")
 
     // Hack fix for now, force jopt-simple to be exactly 5.0.4 because Mojang ships that version,
     // but some transitive dependencies request 6.0+
@@ -154,16 +156,6 @@ tasks.withType<ProcessResources> {
 tasks.withType<AbstractArchiveTask>().configureEach {
     isPreserveFileTimestamps = false
     isReproducibleFileOrder = true
-}
-
-// Merge the resources and classes into the same directory.
-// This is done because java expects modules to be in a single directory.
-// And if we have it in multiple we have to do performance intensive hacks like having the UnionFileSystem
-// This will eventually be migrated to ForgeGradle so modders don't need to manually do it. But that is later.
-sourceSets.forEach() {
-    val dir = layout.buildDirectory.dir("sourcesSets/${it}.name")
-    it.output.setResourcesDir(dir)
-    it.java.destinationDirectory = dir
 }
 
 idea {
