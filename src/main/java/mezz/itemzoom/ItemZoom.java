@@ -14,6 +14,7 @@ import net.neoforged.fml.ModLoadingContext;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.config.ModConfigEvent;
+import net.neoforged.neoforge.client.event.RegisterPictureInPictureRenderersEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.event.RenderTooltipEvent;
 import net.neoforged.neoforge.client.event.ScreenEvent;
@@ -32,11 +33,12 @@ public class ItemZoom {
 		Config config = new Config();
 		activeContainer.registerConfig(ModConfig.Type.CLIENT, config.getConfigSpec());
 
-        modEventBus.addListener(EventPriority.NORMAL, false, RegisterKeyMappingsEvent.class, KeyBindings::create);
-        modEventBus.addListener(EventPriority.NORMAL, false, ModConfigEvent.Loading.class, configLoadingEvent -> {
-            setup(config);
-        });
-    }
+		modEventBus.addListener(EventPriority.NORMAL, false, RegisterKeyMappingsEvent.class, KeyBindings::create);
+		modEventBus.addListener(EventPriority.NORMAL, false, RegisterPictureInPictureRenderersEvent.class, RenderHandler::registerPictureInPictureRenderers);
+		modEventBus.addListener(EventPriority.NORMAL, false, ModConfigEvent.Loading.class, _ -> {
+			setup(config);
+		});
+	}
 
 	private static void setup(Config config) {
 		InputHandler inputHandler = new InputHandler(config);

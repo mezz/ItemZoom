@@ -7,27 +7,36 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.navigation.ScreenRectangle;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.AbstractRecipeBookScreen;
 import net.minecraft.client.gui.screens.recipebook.RecipeBookComponent;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.Rect2i;
-import net.minecraft.client.renderer.RenderBuffers;
+import net.minecraft.client.renderer.item.TrackingItemStackRenderState;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.ARGB;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemCooldowns;
+import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
+import net.neoforged.neoforge.client.event.RegisterPictureInPictureRenderersEvent;
 import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 import org.joml.Matrix3x2fStack;
+import org.jspecify.annotations.Nullable;
 
-import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Supplier;
 
 
 public class RenderHandler {
+	private static final int ITEM_SIZE = 16;
+	private static final int MIN_RENDER_SIZE = ITEM_SIZE * 2;
+	private static final int PADDING = 4;
+	private static final int HELP_TEXT_GAP = 4;
+	private static final int HELP_TEXT_COLOR = ARGB.opaque(0x404040);
 	@Nullable
 	public static Rect2i rendering = null;
 	@Nullable
@@ -38,6 +47,10 @@ public class RenderHandler {
 	public RenderHandler(Config config, Supplier<Boolean> isEnableKeyHeld) {
 		this.config = config;
 		this.isEnableKeyHeld = isEnableKeyHeld;
+	}
+
+	public static void registerPictureInPictureRenderers(RegisterPictureInPictureRenderersEvent event) {
+		event.register(ZoomedItemRenderState.class, ZoomedItemRenderer::new);
 	}
 
 	public void onScreenDrawn() {
@@ -52,14 +65,21 @@ public class RenderHandler {
 		if (itemStack == null || itemStack.isEmpty()) {
 			return;
 		}
-		if (config.isJeiOnly() && !ItemStack.isSameItem(itemStack, JeiCompat.getStackUnderMouse())) {
+		ItemStack jeiStackUnderMouse = JeiCompat.getStackUnderMouse();
+		boolean isJeiHoveredItem = ItemStack.isSameItem(itemStack, jeiStackUnderMouse);
+		if (config.isJeiOnly() && !isJeiHoveredItem) {
 			return;
 		}
+		ItemStack recipesGuiStackUnderMouse = JeiCompat.getRecipesGuiStackUnderMouse();
+		boolean isRecipesGuiHoveredItem = ItemStack.isSameItem(itemStack, recipesGuiStackUnderMouse);
 
 		Minecraft minecraft = Minecraft.getInstance();
 		Screen currentScreen = minecraft.screen;
-		if (currentScreen instanceof AbstractContainerScreen<?> containerScreen) {
-			Rect2i renderArea = getRenderingArea(containerScreen, x);
+		if (currentScreen != null) {
+			Rect2i renderArea = getRenderingArea(minecraft, currentScreen, isJeiHoveredItem, isRecipesGuiHoveredItem, x);
+			if (renderArea == null) {
+				return;
+			}
 			// avoid rendering zoomed items in the same space as the item being hovered over
 			if (!renderArea.contains(x, y)) {
 				if (renderZoomedStack(guiGraphics, itemStack, renderArea, minecraft)) {
@@ -69,25 +89,44 @@ public class RenderHandler {
 		}
 	}
 
+	private @Nullable Rect2i getRenderingArea(
+			Minecraft minecraft,
+			Screen currentScreen,
+			boolean isJeiHoveredItem,
+			boolean isRecipesGuiHoveredItem,
+			int mouseX
+	) {
+		if (currentScreen instanceof AbstractContainerScreen<?> containerScreen) {
+			return getRenderingArea(containerScreen, mouseX);
+		}
+
+		if (!isJeiHoveredItem) {
+			return null;
+		}
+
+		JeiCompat.GuiArea guiArea = JeiCompat.getGuiArea(currentScreen);
+		if (guiArea != null) {
+			if (isRecipesGuiHoveredItem) {
+				return getLeftRenderingArea(guiArea);
+			}
+			return getRenderingArea(guiArea, mouseX);
+		}
+
+		Screen parentScreen = JeiCompat.getRecipesGuiParentScreen();
+		if (parentScreen instanceof AbstractContainerScreen<?> containerScreen) {
+			return getRenderingArea(containerScreen, mouseX);
+		}
+
+		return getRenderingArea(minecraft.getWindow(), mouseX);
+	}
+
 	public Rect2i getRenderingArea(AbstractContainerScreen<?> containerScreen, int mouseX) {
 		Minecraft minecraft = containerScreen.getMinecraft();
 		Window window = minecraft.getWindow();
-		int guiRight = containerScreen.getLeftPos() + containerScreen.getImageHeight();
+		int guiRight = containerScreen.getLeftPos() + containerScreen.getImageWidth();
 		int spaceOnLeft = getSpaceOnLeft(containerScreen);
 		int spaceOnRight = window.getGuiScaledWidth() - guiRight;
-
-		final boolean renderLeft;
-		if (mouseX < containerScreen.getLeftPos()) {
-			// mouse is to the left side of the gui, render on the right.
-			renderLeft = false;
-		} else if (mouseX > guiRight) {
-			// mouse is to the right side of the gui, render on the left.
-			renderLeft = true;
-		} else {
-			// mouse is over the gui somewhere, pick whichever size has more space,
-			// but bias a bit toward picking the left
-			renderLeft = (spaceOnLeft * 1.1) >= spaceOnRight;
-		}
+		boolean renderLeft = shouldRenderLeft(mouseX, containerScreen.getLeftPos(), guiRight, spaceOnLeft, spaceOnRight);
 
 		int y = containerScreen.getTopPos();
 		int height = containerScreen.getImageHeight();
@@ -95,6 +134,52 @@ public class RenderHandler {
 			return new Rect2i(0, y, spaceOnLeft, height);
 		} else {
 			return new Rect2i(guiRight, y, spaceOnRight, height);
+		}
+	}
+
+	private static Rect2i getLeftRenderingArea(JeiCompat.GuiArea guiArea) {
+		return new Rect2i(0, guiArea.guiTop(), Math.max(0, guiArea.guiLeft()), guiArea.guiYSize());
+	}
+
+	private static Rect2i getRenderingArea(JeiCompat.GuiArea guiArea, int mouseX) {
+		int guiLeft = guiArea.guiLeft();
+		int guiRight = guiLeft + guiArea.guiXSize();
+		int spaceOnLeft = Math.max(0, guiLeft);
+		int spaceOnRight = Math.max(0, guiArea.screenWidth() - guiRight);
+		boolean renderLeft = shouldRenderLeft(mouseX, guiLeft, guiRight, spaceOnLeft, spaceOnRight);
+
+		if (renderLeft) {
+			return new Rect2i(0, guiArea.guiTop(), spaceOnLeft, guiArea.guiYSize());
+		} else {
+			return new Rect2i(guiRight, guiArea.guiTop(), spaceOnRight, guiArea.guiYSize());
+		}
+	}
+
+	private static Rect2i getRenderingArea(Window window, int mouseX) {
+		int screenWidth = window.getGuiScaledWidth();
+		int screenHeight = window.getGuiScaledHeight();
+		int spaceOnLeft = Math.max(0, mouseX - PADDING);
+		int spaceOnRight = Math.max(0, screenWidth - mouseX - PADDING);
+		boolean renderLeft = (spaceOnLeft * 1.1) >= spaceOnRight;
+
+		if (renderLeft) {
+			return new Rect2i(0, 0, spaceOnLeft, screenHeight);
+		} else {
+			return new Rect2i(mouseX + PADDING, 0, spaceOnRight, screenHeight);
+		}
+	}
+
+	private static boolean shouldRenderLeft(int mouseX, int guiLeft, int guiRight, int spaceOnLeft, int spaceOnRight) {
+		if (mouseX < guiLeft) {
+			// mouse is to the left side of the gui, render on the right.
+			return false;
+		} else if (mouseX > guiRight) {
+			// mouse is to the right side of the gui, render on the left.
+			return true;
+		} else {
+			// mouse is over the gui somewhere, pick whichever size has more space,
+			// but bias a bit toward picking the left
+			return (spaceOnLeft * 1.1) >= spaceOnRight;
 		}
 	}
 
@@ -117,57 +202,89 @@ public class RenderHandler {
 		final int availableAreaWidth = availableArea.getWidth();
 		final int availableAreaHeight = availableArea.getHeight();
 
-		// item is 16 wide, give it some extra space on each side by using 17 here
-		final float scale = config.getZoomAmount() / 100f * availableAreaWidth / 17f;
-		if (scale <= 2.0f) {
+		List<TextLine> helpTextLines = getHelpTextLines(itemStack, minecraft, availableAreaWidth - PADDING * 2);
+		int helpTextHeight = getHelpTextHeight(helpTextLines);
+
+		int maximumRenderSize = Math.min(
+				availableAreaWidth - PADDING * 2,
+				availableAreaHeight - helpTextHeight - PADDING * 2
+		);
+		int renderSize = Math.round(maximumRenderSize * config.getZoomAmount() / 100f);
+		if (renderSize <= MIN_RENDER_SIZE) {
 			// not enough room to be useful
 			return false;
 		}
 
-		final float renderWidth = scale * 16;
-		final float renderHeight = scale * 16;
-		final float xPosition = availableAreaX + ((availableAreaWidth - renderWidth) / 2f);
-		final float yPosition = availableAreaY + ((availableAreaHeight - renderHeight) / 2f);
+		final int totalHeight = renderSize + helpTextHeight;
+		final int xPosition = availableAreaX + ((availableAreaWidth - renderSize) / 2);
+		final int yPosition = availableAreaY + ((availableAreaHeight - totalHeight) / 2);
 
+		renderZoomedItem(guiGraphics, itemStack, minecraft, xPosition, yPosition, renderSize);
+
+		float scale = renderSize / (float) ITEM_SIZE;
 		Matrix3x2fStack poseStack = guiGraphics.pose();
 		poseStack.pushMatrix();
 		{
 			poseStack.translate(xPosition, yPosition);
 			poseStack.scale(scale, scale);
 
-			guiGraphics.item(itemStack, 0, 0);
-
 			renderItemOverlayIntoGUI(guiGraphics, itemStack);
 		}
-		poseStack.pushMatrix();
+		poseStack.popMatrix();
 
-		if (config.showHelpText()) {
-			int y = availableAreaY + ((availableAreaHeight + Math.round(19 * scale)) / 2);
-
-			String modName = Constants.MOD_NAME;
-			Font nameFont = getFont(minecraft, itemStack, IClientItemExtensions.FontContext.SELECTED_ITEM_NAME);
-
-			int stringWidth = nameFont.width(modName);
-			if (stringWidth < availableAreaWidth) {
+		if (!helpTextLines.isEmpty()) {
+			int y = yPosition + renderSize + HELP_TEXT_GAP;
+			for (TextLine line : helpTextLines) {
+				int stringWidth = line.font().width(line.text());
 				int x = availableAreaX + ((availableAreaWidth - stringWidth) / 2);
-				guiGraphics.text(nameFont, modName, x, y, ARGB.opaque(4210752), false);
+				guiGraphics.text(line.font(), line.text(), x, y, HELP_TEXT_COLOR, true);
 
-				y += nameFont.lineHeight;
-			}
-
-			if (config.isToggledEnabled()) {
-				KeyBindings keyBindings = KeyBindings.getInstance();
-				Component displayName = keyBindings.toggle.getTranslatedKeyMessage();
-				String toggleText = displayName.getString();
-				Font minecraftFont = minecraft.font;
-				stringWidth = minecraftFont.width(toggleText);
-				if (stringWidth < availableAreaWidth) {
-					int x = availableAreaX + ((availableAreaWidth - stringWidth) / 2);
-					guiGraphics.text(minecraftFont, toggleText, x, y, ARGB.opaque(4210752), false);
-				}
+				y += line.font().lineHeight;
 			}
 		}
 		return true;
+	}
+
+	private List<TextLine> getHelpTextLines(ItemStack itemStack, Minecraft minecraft, int maximumWidth) {
+		List<TextLine> lines = new ArrayList<>();
+		if (!config.showHelpText()) {
+			return lines;
+		}
+
+		Font nameFont = getFont(minecraft, itemStack, IClientItemExtensions.FontContext.SELECTED_ITEM_NAME);
+		addTextLine(lines, nameFont, Constants.MOD_NAME, maximumWidth);
+
+		if (config.isToggledEnabled()) {
+			KeyBindings keyBindings = KeyBindings.getInstance();
+			Component displayName = keyBindings.toggle.getTranslatedKeyMessage();
+			addTextLine(lines, minecraft.font, displayName.getString(), maximumWidth);
+		}
+		return lines;
+	}
+
+	private static void addTextLine(List<TextLine> lines, Font font, String text, int maximumWidth) {
+		if (font.width(text) < maximumWidth) {
+			lines.add(new TextLine(font, text));
+		}
+	}
+
+	private static int getHelpTextHeight(List<TextLine> lines) {
+		if (lines.isEmpty()) {
+			return 0;
+		}
+
+		int height = HELP_TEXT_GAP;
+		for (TextLine line : lines) {
+			height += line.font().lineHeight;
+		}
+		return height;
+	}
+
+	private static void renderZoomedItem(GuiGraphicsExtractor guiGraphics, ItemStack itemStack, Minecraft minecraft, int x, int y, int renderSize) {
+		TrackingItemStackRenderState renderState = new TrackingItemStackRenderState();
+		minecraft.getItemModelResolver().updateForTopItem(renderState, itemStack, ItemDisplayContext.GUI, minecraft.level, minecraft.player, 0);
+		ScreenRectangle scissorArea = guiGraphics.peekScissorStack();
+		guiGraphics.submitPictureInPictureRenderState(new ZoomedItemRenderState(renderState, x, y, x + renderSize, y + renderSize, renderSize, scissorArea));
 	}
 
 	private static Font getFont(Minecraft minecraft, ItemStack itemStack, IClientItemExtensions.FontContext context) {
@@ -193,10 +310,7 @@ public class RenderHandler {
 				String countString = String.valueOf(itemStack.getCount());
 				Font itemCountFont = getFont(minecraft, itemStack, IClientItemExtensions.FontContext.ITEM_COUNT);
 
-				RenderBuffers renderBuffers = minecraft.renderBuffers();
-				MultiBufferSource.BufferSource bufferSource = renderBuffers.bufferSource();
 				guiGraphics.text(itemCountFont, countString, (int) (17.0F - itemCountFont.width(countString)), (int) 9.0F, ARGB.opaque(0xFFFFFF), true);
-				bufferSource.endBatch();
 			}
 
 			if (config.showDurabilityBar() && itemStack.isBarVisible()) {
@@ -221,6 +335,9 @@ public class RenderHandler {
 			}
 		}
 		poseStack.popMatrix();
+	}
+
+	private record TextLine(Font font, String text) {
 	}
 
 }

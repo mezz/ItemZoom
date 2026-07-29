@@ -8,12 +8,12 @@ import java.util.Collection;
 import java.util.Collections;
 
 public class GuiHandler implements IGlobalGuiHandler {
-    @Override
-    public Collection<Rect2i> getGuiExtraAreas() {
-        Rect2i rendering = RenderHandler.rendering;
-        if (rendering != null) {
-            return Collections.singleton(rendering);
-        }
-        return Collections.emptySet();
-    }
+	@Override
+	public Collection<Rect2i> getGuiExtraAreas() {
+		Rect2i rendering = RenderHandler.rendering;
+		if (rendering != null) {
+			return Collections.singleton(rendering);
+		}
+		return Collections.emptySet();
+	}
 }

@@ -4,11 +4,8 @@ import mezz.itemzoom.client.Constants;
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
 import mezz.jei.api.registration.IGuiHandlerRegistration;
-import mezz.jei.api.runtime.IIngredientListOverlay;
 import mezz.jei.api.runtime.IJeiRuntime;
 import net.minecraft.resources.Identifier;
-
-import java.util.Optional;
 
 @JeiPlugin
 public class JeiModPlugin implements IModPlugin {
@@ -26,7 +23,11 @@ public class JeiModPlugin implements IModPlugin {
 
 	@Override
 	public void onRuntimeAvailable(IJeiRuntime jeiRuntime) {
-		IIngredientListOverlay ingredientListOverlay = jeiRuntime.getIngredientListOverlay();
-		JeiCompat.ingredientListOverlay = Optional.of(ingredientListOverlay);
+		JeiCompat.setRuntime(jeiRuntime);
+	}
+
+	@Override
+	public void onRuntimeUnavailable() {
+		JeiCompat.clearRuntime();
 	}
 }
