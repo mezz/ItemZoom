@@ -1,0 +1,25 @@
+{
+    "_comment": "Гарячі клавіші",
+    "key.itemzoom.toggle": "Перемикання масштабу предмета",
+    "key.itemzoom.hold": "Утримуйте для відображення",
+    "key.itemzoom.zoom.in": "Збільшити",
+    "key.itemzoom.zoom.out": "Зменшити",
+
+    "_comment": "Конфіг",
+    "config.itemzoom.title": "%MODNAME Конфіг",
+
+    "config.itemzoom.toggle.enabled": "Перемикання масштабу предмета",
+    "config.itemzoom.toggle.enabled.comment": "Якщо встановлено значення \"false\", масштабування предмета буде вимкнено.",
+    "config.itemzoom.zoom.amount": "Величина збільшення",
+    "config.itemzoom.zoom.amount.comment": "Встановіть меншу кількість, щоб зменшити масштаб предмета.",
+    "config.itemzoom.jei.only": "Тільки накладки JEI",
+    "config.itemzoom.jei.only.comment": "Масштабуйте предмети лише з накладок списку компонентів JEI та списку закладок.",
+    "config.itemzoom.show.help.text": "Відобразити текст довідки",
+    "config.itemzoom.show.help.text.comment": "Відображається назва \"Item Zoom\" і гаряча клавіша для перемикання цього режиму під збільшеним об'єктом.",
+    "config.itemzoom.show.damage.bar": "Відобразити індикатор міцності",
+    "config.itemzoom.show.damage.bar.comment": "Відображає міцність предмета при масштабуванні.",
+    "config.itemzoom.show.stack.size": "Відобразити розмір стоса",
+    "config.itemzoom.show.stack.size.comment": "Відображає розмір стоса при масштабуванні.",
+    "config.itemzoom.show.cooldown": "Відобразити перезарядку",
+    "config.itemzoom.show.cooldown.comment": "Відображає анімацію перезарядки предмета при масштабуванні."
+}
