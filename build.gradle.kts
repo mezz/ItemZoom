@@ -3,7 +3,7 @@ plugins {
     id("idea")
     id("eclipse")
     // https://projects.neoforged.net/neoforged/moddevgradle
-    id("net.neoforged.moddev") version("2.0.143")
+    id("net.neoforged.moddev") version("2.0.147")
 }
 
 // gradle.properties

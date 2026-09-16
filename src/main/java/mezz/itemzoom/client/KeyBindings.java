@@ -7,7 +7,6 @@ import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.settings.KeyConflictContext;
 import net.neoforged.neoforge.client.settings.KeyModifier;
 import org.jetbrains.annotations.Nullable;
-import org.lwjgl.glfw.GLFW;
 
 public class KeyBindings {
 	@Nullable
@@ -22,7 +21,7 @@ public class KeyBindings {
 	}
 
 	private KeyBindings(RegisterKeyMappingsEvent registerEvent) {
-		InputConstants.Key zKey = InputConstants.Type.KEYSYM.getOrCreate(GLFW.GLFW_KEY_Z);
+		InputConstants.Key zKey = InputConstants.Type.KEYBOARD.getOrCreate(InputConstants.KEY_Z);
 		InputConstants.Key none = InputConstants.UNKNOWN;
 		KeyMapping.Category category = new KeyMapping.Category(Identifier.fromNamespaceAndPath(Constants.MOD_ID, "category"));
 		registerEvent.registerCategory(category);
